@@ -1,0 +1,1 @@
+rule_ok=1 path=/workspace/lauren-bot-team-v0.1/lauren-team-kit/rules/filter-empty-query.md

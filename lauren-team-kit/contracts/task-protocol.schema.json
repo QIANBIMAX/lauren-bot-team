@@ -1,0 +1,235 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lauren-bot-team.local/schemas/task-protocol-0.1.json",
+  "title": "LaurenTaskProtocol",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "task_id",
+    "title",
+    "status",
+    "created_at",
+    "updated_at",
+    "requester",
+    "roles",
+    "scope",
+    "acceptance",
+    "worktree",
+    "integration",
+    "merge_policy",
+    "evidence_dir",
+    "history"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "lauren-task-protocol/0.1"
+    },
+    "task_id": { "type": "string", "minLength": 1 },
+    "title": { "type": "string", "minLength": 1 },
+    "status": {
+      "type": "string",
+      "enum": [
+        "待执行",
+        "执行中",
+        "待验证",
+        "验证通过",
+        "待合并",
+        "已完成",
+        "需修改",
+        "受阻",
+        "已取消",
+        "合并失败"
+      ]
+    },
+    "created_at": { "type": "string", "minLength": 1 },
+    "updated_at": { "type": "string", "minLength": 1 },
+    "requester": { "type": "string" },
+    "roles": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["chief", "developer", "verifier"],
+      "properties": {
+        "chief": { "type": "string", "description": "幕僚长 bot 名或 id" },
+        "developer": { "type": "string", "description": "开发助手" },
+        "verifier": { "type": "string", "description": "验证助手" }
+      }
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["goal", "in_scope", "out_of_scope"],
+      "properties": {
+        "goal": { "type": "string" },
+        "in_scope": { "type": "array", "items": { "type": "string" } },
+        "out_of_scope": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "acceptance": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "description", "command", "must_run", "pass_criteria"],
+        "properties": {
+          "id": { "type": "string" },
+          "description": { "type": "string" },
+          "command": { "type": "string" },
+          "must_run": { "type": "boolean", "description": "true 则未执行不得标验证通过" },
+          "pass_criteria": { "type": "string" }
+        }
+      }
+    },
+    "worktree": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "branch"],
+      "properties": {
+        "path": { "type": "string" },
+        "branch": { "type": "string" }
+      }
+    },
+    "integration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["branch"],
+      "properties": {
+        "branch": { "type": "string", "description": "Demo 本地集成分支，如 demo/integration" }
+      }
+    },
+    "merge_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode"],
+      "properties": {
+        "mode": { "type": "string", "enum": ["confirm", "auto"] },
+        "notes": { "type": "string" }
+      }
+    },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "commit": { "type": "string" },
+        "summary": { "type": "string" },
+        "self_check": {
+          "type": "object",
+          "properties": {
+            "commands": { "type": "array", "items": { "type": "string" } },
+            "passed": { "type": "boolean" },
+            "log_path": { "type": "string" }
+          }
+        }
+      }
+    },
+    "verification": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "ran_at": { "type": "string" },
+        "result": { "type": "string", "enum": ["pass", "fail", "inconclusive"] },
+        "bound_commit": { "type": "string" },
+        "checks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["acceptance_id", "executed"],
+            "properties": {
+              "acceptance_id": { "type": "string" },
+              "executed": { "type": "boolean" },
+              "exit_code": { "type": ["integer", "null"] },
+              "log_path": { "type": "string" },
+              "screenshot_paths": {
+                "type": "array",
+                "items": { "type": "string" }
+              },
+              "notes": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "evidence_dir": {
+      "type": "string",
+      "description": "相对路径，推荐 workspace/runs/<task_id>/"
+    },
+    "blockers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "string" },
+          "message": { "type": "string" },
+          "recovery_hint": { "type": "string" }
+        }
+      }
+    },
+    "lessons": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "candidates": {
+          "type": "array",
+          "items": { "type": "object" }
+        },
+        "published": {
+          "type": "array",
+          "items": { "type": "object" }
+        }
+      }
+    },
+    "merge": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "attempted_at": { "type": "string" },
+        "result": { "type": "string", "enum": ["success", "failure", "blocked"] },
+        "notes": { "type": "string" }
+      }
+    },
+    "history": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["at", "actor", "to"],
+        "properties": {
+          "at": { "type": "string" },
+          "actor": { "type": "string" },
+          "from": { "type": "string" },
+          "to": { "type": "string" },
+          "note": { "type": "string" }
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "status": { "const": "验证通过" } },
+        "required": ["status"]
+      },
+      "then": {
+        "required": ["verification", "artifact"],
+        "properties": {
+          "verification": {
+            "type": "object",
+            "required": ["result", "bound_commit", "checks"],
+            "properties": {
+              "result": { "const": "pass" }
+            }
+          },
+          "artifact": {
+            "type": "object",
+            "required": ["commit"]
+          }
+        }
+      }
+    }
+  ],
+  "description": "Runtime MUST also enforce: every acceptance item with must_run=true has a checks[] entry with executed=true before status may be 验证通过. JSON Schema alone cannot express cross-array quantification portably."
+}
+

@@ -1,0 +1,16 @@
+{
+  "scenario": "C3",
+  "round": "blocked",
+  "impl": "buggy",
+  "result": "blocked",
+  "expected": "blocked",
+  "cli_safe": 0,
+  "cli_exit": 1,
+  "lib_exit": 1,
+  "rule_ok": 1,
+  "note": "published empty-query rule probes caught reintroduced defect",
+  "timestamp": "2026-11-04T19:32:19+0800",
+  "commands": ["commands/cli_empty.txt", "commands/lib_safe.txt", "commands/rule_file.txt"],
+  "meta": "meta.txt",
+  "rule": "lauren-team-kit/rules/filter-empty-query.md"
+}

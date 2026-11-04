@@ -1,0 +1,7 @@
+scenario=C3-clean-pass
+impl=fixed
+rule=lauren-team-kit/rules/filter-empty-query.md
+rule_exists=yes
+timestamp=2026-11-04T19:32:19+0800
+cwd=/workspace/lauren-bot-team-v0.1/demo-app
+python=/workspace/lauren-bot-team-v0.1/demo-app/.venv/bin/python

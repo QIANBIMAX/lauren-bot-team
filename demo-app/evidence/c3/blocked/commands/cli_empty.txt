@@ -1,0 +1,19 @@
+cmd: DEMO_FILTER_IMPL=buggy /workspace/lauren-bot-team-v0.1/demo-app/.venv/bin/python -m demo_app filter --data /workspace/lauren-bot-team-v0.1/demo-app/data/tasks.json --impl buggy --query ""
+exit_code=1
+----- stdout -----
+
+----- stderr -----
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/workspace/lauren-bot-team-v0.1/demo-app/src/demo_app/__main__.py", line 109, in <module>
+    raise SystemExit(main())
+                     ~~~~^^
+  File "/workspace/lauren-bot-team-v0.1/demo-app/src/demo_app/__main__.py", line 105, in main
+    return int(ns.func(ns))
+               ~~~~~~~^^^^
+  File "/workspace/lauren-bot-team-v0.1/demo-app/src/demo_app/__main__.py", line 65, in cmd_filter
+    filtered = _filter_fn(impl)(tasks, status=ns.status, query=query)
+  File "/workspace/lauren-bot-team-v0.1/demo-app/src/demo_app/filter_buggy.py", line 20, in filter_tasks
+    raise ValueError("empty query is not allowed (buggy preset for C2)")
+ValueError: empty query is not allowed (buggy preset for C2)

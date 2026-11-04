@@ -1,0 +1,12 @@
+{
+  "scenario": "C2",
+  "round": 1,
+  "impl": "buggy",
+  "result": "fail",
+  "expected": "fail",
+  "exit_code": 1,
+  "note": "empty query raised / non-zero — preset defect demonstrated",
+  "timestamp": "2026-11-04T19:30:20+0800",
+  "commands": ["commands/empty_query.txt"],
+  "meta": "meta.txt"
+}

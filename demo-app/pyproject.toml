@@ -1,0 +1,13 @@
+[project]
+name = "lauren-demo-app"
+version = "0.1.0"
+description = "Lauren bot team demo: small cross-platform task list (filter slice)"
+requires-python = ">=3.10"
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]

@@ -1,0 +1,34 @@
+{
+  "tasks": [
+    {
+      "id": "t1",
+      "title": "报销发票核对",
+      "description": "核对差旅发票金额与票据",
+      "status": "open"
+    },
+    {
+      "id": "t2",
+      "title": "open-only-task",
+      "description": "仅 open 状态的哨兵任务，不应出现在 done 筛选",
+      "status": "open"
+    },
+    {
+      "id": "t3",
+      "title": "已归档周报",
+      "description": "上周期周报已完成",
+      "status": "done"
+    },
+    {
+      "id": "t4",
+      "title": "发票模板更新",
+      "description": "更新电子发票导出模板",
+      "status": "done"
+    },
+    {
+      "id": "t5",
+      "title": "会议室预约",
+      "description": "预约下周评审会议室",
+      "status": "open"
+    }
+  ]
+}

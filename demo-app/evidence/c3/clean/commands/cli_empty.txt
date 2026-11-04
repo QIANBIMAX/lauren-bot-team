@@ -1,0 +1,5 @@
+cmd: DEMO_FILTER_IMPL=fixed /workspace/lauren-bot-team-v0.1/demo-app/.venv/bin/python -m demo_app filter --data /workspace/lauren-bot-team-v0.1/demo-app/data/tasks.json --impl fixed --query ""
+exit_code=0
+----- stdout -----
+[]
+----- stderr -----

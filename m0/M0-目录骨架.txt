@@ -1,0 +1,90 @@
+lauren-bot-team/
+├── README.md                          # 总览：OMB 平台 + pack + kit + Demo；不 fork OMB
+├── LICENSE                            # 自研默认许可（建议 Apache-2.0 或 MIT；与引用组件兼容）
+├── NOTICE                             # 归因：OMB 使用声明；若改编 pstack 原则则列 MIT provenance
+├── UPSTREAM.md                        # 可选：钉死参考的 OMB 版本与 pstack commit
+├── VERSION                            # 交付包版本，如 0.1.0
+├── .gitignore                         # 忽略 workspace/runs/* 内容、.env、密钥
+├── .env.example                       # DeepSeek 等 kit 侧变量示例（不提交真实 key）
+│
+├── lauren-omb-pack/                   # OpenMausBot 可导入团队包（数据/配置，非 OMB 源码）
+│   ├── README.md                      # 如何在 OMB Templates/Teams 导入
+│   ├── team.botmrr.md                 # BotMRR Markdown v1 三角色团队（主候选）
+│   ├── team.openmaus.json             # 可选：部门分享 JSON 双供
+│   ├── bots/
+│   │   ├── chief.instructions.md      # 幕僚长 standing instructions
+│   │   ├── developer.instructions.md  # 开发助手
+│   │   └── verifier.instructions.md   # 验证助手
+│   ├── skills/                        # 仅 SKILL.md 文本（受 OMB 数量限制）
+│   │   ├── task-protocol/
+│   │   │   └── SKILL.md
+│   │   ├── evidence-layout/
+│   │   │   └── SKILL.md
+│   │   └── no-pass-without-checks/
+│   │       └── SKILL.md
+│   ├── groups/
+│   │   └── lauren-core.md             # 三人 group 与默认应答
+│   └── routines/
+│       └── .gitkeep                   # 一期例程默认暂停；占位
+│
+├── lauren-team-kit/                   # 工程闭环（状态机/契约/验回流/合并预检）
+│   ├── README.md
+│   ├── pyproject.toml                 # 或 package.json；一期建议 Python CLI
+│   ├── src/lauren_team_kit/
+│   │   ├── __init__.py
+│   │   ├── cli.py                     # resume / verify-gate / merge-precheck / preflight
+│   │   ├── protocol.py                # 加载/校验 task.json
+│   │   ├── state_machine.py           # 合法转移
+│   │   ├── evidence.py                # 目录约定与中文空格路径
+│   │   ├── coding/
+│   │   │   ├── base.py
+│   │   │   └── shell_deepseek.py      # 默认 coding 适配；非 OMB 源码
+│   │   ├── verifier/
+│   │   │   ├── base.py
+│   │   │   └── shell_verifier.py      # 跑 acceptance.command，写 evidence
+│   │   ├── merge/
+│   │   │   └── precheck.py            # commit 一致、检查全过、无冲突、基线未脏
+│   │   └── lessons/
+│   │       └── publish.py             # candidates → published（须再验证）
+│   ├── schemas/
+│   │   └── task-protocol.schema.json  # 与计划目录 M0 schema 同步
+│   ├── rules/                         # 已发布项目级规则
+│   │   └── .gitkeep
+│   ├── skills/generated/              # Fail 回流候选（文本）
+│   │   └── .gitkeep
+│   └── tests/
+│       ├── test_state_machine.py
+│       └── test_protocol_gate.py      # 未执行 must_run ⇒ 拒绝 验证通过
+│
+├── demo-app/                          # 跨平台小型任务列表
+│   ├── README.md
+│   ├── pyproject.toml
+│   ├── src/demo_app/
+│   │   ├── __init__.py
+│   │   ├── main.py
+│   │   ├── filter.py                  # 筛选功能（C1）
+│   │   ├── seed.py
+│   │   └── serve.py                   # 可选本地服务；测进程清理
+│   ├── fixtures/
+│   │   └── basic.json
+│   ├── tests/
+│   │   ├── test_filter.py
+│   │   └── test_filter_empty_query.py # C2/C3 回归
+│   └── scripts/
+│       └── smoke.sh                   # 三平台烟雾验收入口
+│
+├── docs/
+│   ├── tutorial.md                    # 安装 OMB → 导入三角色 → 跑通一条
+│   ├── m0-research.md                 # 可链到计划仓 M0-调研与协议.md
+│   ├── platforms.md                   # macOS / Win11 / Ubuntu 24.04 基线
+│   ├── merge-policy.md                # confirm|auto；仅本地集成分支
+│   └── evidence-layout.md             # workspace/runs/<id>/ 说明
+│
+├── workspace/
+│   ├── runs/                          # 运行证据根（内容可忽略提交）
+│   │   └── .gitkeep
+│   └── repos/
+│       └── README.md                  # 可把 demo-app 子模块或副本说明写这里
+│
+└── m0-pointers/                       # 可选：指向计划仓批件与 Mac 钉死副本
+    └── README.md

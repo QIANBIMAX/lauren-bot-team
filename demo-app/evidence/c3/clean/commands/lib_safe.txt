@@ -1,0 +1,2 @@
+lib_safe_ok
+exit_code=0

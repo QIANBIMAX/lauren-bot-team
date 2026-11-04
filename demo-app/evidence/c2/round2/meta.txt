@@ -1,0 +1,5 @@
+scenario=C2-round2-pass
+impl=fixed
+timestamp=2026-11-04T19:30:20+0800
+cwd=/workspace/lauren-bot-team-v0.1/demo-app
+python=/workspace/lauren-bot-team-v0.1/demo-app/.venv/bin/python

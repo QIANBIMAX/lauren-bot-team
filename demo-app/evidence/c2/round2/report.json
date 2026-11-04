@@ -1,0 +1,13 @@
+{
+  "scenario": "C2",
+  "round": 2,
+  "impl": "fixed",
+  "result": "pass",
+  "expected": "pass",
+  "exit_code_empty_query": 0,
+  "pytest_exit_code": 0,
+  "note": "empty query safe + pytest passed",
+  "timestamp": "2026-11-04T19:30:20+0800",
+  "commands": ["commands/empty_query.txt", "commands/pytest.txt"],
+  "meta": "meta.txt"
+}

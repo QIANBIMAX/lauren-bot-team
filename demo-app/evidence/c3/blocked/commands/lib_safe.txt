@@ -1,0 +1,6 @@
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+  File "/workspace/lauren-bot-team-v0.1/demo-app/src/demo_app/filter_buggy.py", line 20, in filter_tasks
+    raise ValueError("empty query is not allowed (buggy preset for C2)")
+ValueError: empty query is not allowed (buggy preset for C2)
+exit_code=1

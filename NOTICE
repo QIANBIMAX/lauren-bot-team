@@ -1,0 +1,15 @@
+Lauren bot team NOTICE
+======================
+
+This delivery package (lauren-omb-pack, lauren-team-kit, demo-app, docs) is
+original work under the MIT License in ./LICENSE.
+
+Runtime platform (not forked, not redistributed as source here):
+  OpenMausBot (OMB) — Apache-2.0 — https://github.com/OpenMausBot/OpenMausBot
+  Phase-1 pin (Mac measured): OpenMausBot 0.1.140
+
+Optional conceptual provenance (principles only; no source fork):
+  pstack-family tooling ideas — MIT — credit Lauren Tan and upstream authors
+  where principles are adapted into lauren-team-kit docs/skills.
+
+Do not confuse this repo with OMB source. Pack files are data/config for import.
