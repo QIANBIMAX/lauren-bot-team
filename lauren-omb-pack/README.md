@@ -29,3 +29,7 @@ OpenMausBot 可导入团队包（数据/配置，非 OMB 源码）。
 ## 清单对照
 
 见 `team.manifest.md`。兼容与延后项见 `../docs/compatibility.md`。
+
+## Team v0.2 扩展
+
+可选旁路包见 [`team-v0.2/`](team-v0.2/)。**不是**本三角根包的一部分；Lite 默认仍只用幕僚长/开发/验证。

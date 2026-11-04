@@ -1,0 +1,18 @@
+{
+  "id": "c8-empty-safe",
+  "summary": "C8 发布演示规则",
+  "source_task": "demo-c8",
+  "rule_path": "lauren-team-kit/rules/c8-empty-safe.md",
+  "store_path": "lauren-team-kit/lessons/store/c8-empty-safe.json",
+  "published_at": "2026-11-04T23:35:37+08:00",
+  "published_by": "chief",
+  "reviewed_by": "verifier",
+  "tags": [],
+  "rule_body": "# 规则：c8-empty-safe（L5 发布演示）\n\n来源：demo-c8 经验发布烟雾。\n\n## 硬约束\n\n- 空 query 必须安全（演示用占位）。\n\n## 验收探针\n\n```bash\ntrue\n```\n",
+  "candidate_snapshot": {
+    "proposed_by": "developer",
+    "proposed_at": "2026-11-04T23:35:37+08:00",
+    "review_notes": "smoke ok",
+    "status": "approved"
+  }
+}

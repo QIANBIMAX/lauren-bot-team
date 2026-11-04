@@ -45,9 +45,3 @@
 ## 说明
 
 本轮闭环在权威根 `workspace/runs/demo-c5/worktree` 实跑（Mac/F 当时离线）。代码与证据已落盘；F 盘既有 `task/demo-c5`@`f4ca0e1` 待 Mac 恢复后对齐提交并（如需）再 push。
-
-
-## F 盘对齐
-- round1: `5e96bd9`
-- round2 / integration HEAD: `4bb05f7`
-- merge: ff（confirm）

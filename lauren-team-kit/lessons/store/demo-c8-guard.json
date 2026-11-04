@@ -1,0 +1,20 @@
+{
+  "id": "demo-c8-guard",
+  "summary": "空 query 必须返回 []",
+  "source_task": "demo-c8",
+  "rule_path": "lauren-team-kit/rules/demo-c8-guard.md",
+  "store_path": "lauren-team-kit/lessons/store/demo-c8-guard.json",
+  "published_at": "2026-11-04T23:44:58+08:00",
+  "published_by": "chief",
+  "reviewed_by": "verifier",
+  "tags": [
+    "smoke"
+  ],
+  "rule_body": "# demo-c8-guard\n\n空 query 必须返回 []，不得抛异常。来源：demo-c8 烟雾。\n",
+  "candidate_snapshot": {
+    "proposed_by": "developer",
+    "proposed_at": "2026-11-04T23:44:58+08:00",
+    "review_notes": "有效且不误伤",
+    "status": "approved"
+  }
+}

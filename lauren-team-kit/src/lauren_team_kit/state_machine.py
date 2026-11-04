@@ -11,8 +11,8 @@ ALLOWED: dict[str, frozenset[str]] = {
     "验证通过": frozenset({"待合并", "需修改"}),
     "待合并": frozenset({"已完成", "合并失败"}),
     "合并失败": frozenset({"待合并", "需修改", "已取消"}),
-    "需修改": frozenset({"执行中", "已取消"}),
-    "受阻": frozenset({"执行中", "已取消"}),
+    "需修改": frozenset({"执行中", "已取消", "受阻"}),
+    "受阻": frozenset({"待执行", "执行中", "待验证", "已取消"}),
     "已完成": frozenset(),
     "已取消": frozenset(),
 }

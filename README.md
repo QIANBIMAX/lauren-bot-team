@@ -17,13 +17,15 @@
 | `m0/` | Mac 实测证据与批件指针 |
 | `workspace/runs/` | 运行证据根（内容默认不提交） |
 
-## 角色（一期仅此三角）
+## 角色
+
+**Lite 默认（一期三角）**
 
 - 幕僚长（chief）
 - 开发助手（developer）
 - 验证助手（verifier）
 
-不含 Nancy / Matcha 等扩展角色。
+**Team v0.2 扩展（可选，旁路）**：Nancy（进度）/ Matcha（工程调度）/ Eng stub — 见 [`lauren-omb-pack/team-v0.2/`](lauren-omb-pack/team-v0.2/) 与 [`docs/team-v0.2.md`](docs/team-v0.2.md)。**不是**一期 M0 三角包的一部分。
 
 ## 快速路径
 
@@ -43,6 +45,7 @@
 
 - OMB GUI 正式导入格式 / 重启恢复的系统验收
 - Windows / Linux
+- 四个完整 Eng / Full OMB GUI（Team 切片仅 stub）
 - demo-c4 在 Demo 集成分支上的真实合并（需先 `init-integration`）
 
 ## 材料路径（附录）

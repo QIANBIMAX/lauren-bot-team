@@ -29,3 +29,12 @@ def test_illegal_rejected():
 def test_unknown_status():
     with pytest.raises(IllegalTransitionError):
         apply_transition("不存在", "执行中")
+
+
+def test_blocked_resume_edges():
+    """Lite L3: 受阻 may return to 待执行 / 执行中 / 待验证 (or 已取消)."""
+    for to in ("待执行", "执行中", "待验证", "已取消"):
+        assert can_transition("受阻", to)
+        assert apply_transition("受阻", to) == to
+    with pytest.raises(IllegalTransitionError):
+        apply_transition("受阻", "已完成")

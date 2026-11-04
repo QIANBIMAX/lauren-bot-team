@@ -6,7 +6,7 @@
   "expected": "fail",
   "exit_code": 1,
   "note": "empty query raised / non-zero — preset defect demonstrated",
-  "timestamp": "2026-11-04T19:30:20+0800",
+  "timestamp": "2026-11-04T22:39:58+0800",
   "commands": ["commands/empty_query.txt"],
   "meta": "meta.txt"
 }

@@ -4,15 +4,22 @@ exit_code=1
 
 ----- stderr -----
 Traceback (most recent call last):
+  File "/workspace/lauren-bot-team-v0.1/demo-app/src/demo_app/__main__.py", line 68, in cmd_filter
+    filtered = _filter_fn(impl)(tasks, status=ns.status, query=query, limit=limit)
+TypeError: filter_tasks() got an unexpected keyword argument 'limit'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
   File "<frozen runpy>", line 198, in _run_module_as_main
   File "<frozen runpy>", line 88, in _run_code
-  File "/workspace/lauren-bot-team-v0.1/demo-app/src/demo_app/__main__.py", line 109, in <module>
+  File "/workspace/lauren-bot-team-v0.1/demo-app/src/demo_app/__main__.py", line 127, in <module>
     raise SystemExit(main())
                      ~~~~^^
-  File "/workspace/lauren-bot-team-v0.1/demo-app/src/demo_app/__main__.py", line 105, in main
+  File "/workspace/lauren-bot-team-v0.1/demo-app/src/demo_app/__main__.py", line 123, in main
     return int(ns.func(ns))
                ~~~~~~~^^^^
-  File "/workspace/lauren-bot-team-v0.1/demo-app/src/demo_app/__main__.py", line 65, in cmd_filter
+  File "/workspace/lauren-bot-team-v0.1/demo-app/src/demo_app/__main__.py", line 74, in cmd_filter
     filtered = _filter_fn(impl)(tasks, status=ns.status, query=query)
   File "/workspace/lauren-bot-team-v0.1/demo-app/src/demo_app/filter_buggy.py", line 20, in filter_tasks
     raise ValueError("empty query is not allowed (buggy preset for C2)")

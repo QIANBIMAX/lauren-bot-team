@@ -26,8 +26,14 @@
       "type": "string",
       "const": "lauren-task-protocol/0.1"
     },
-    "task_id": { "type": "string", "minLength": 1 },
-    "title": { "type": "string", "minLength": 1 },
+    "task_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
     "status": {
       "type": "string",
       "enum": [
@@ -43,27 +49,64 @@
         "合并失败"
       ]
     },
-    "created_at": { "type": "string", "minLength": 1 },
-    "updated_at": { "type": "string", "minLength": 1 },
-    "requester": { "type": "string" },
+    "created_at": {
+      "type": "string",
+      "minLength": 1
+    },
+    "updated_at": {
+      "type": "string",
+      "minLength": 1
+    },
+    "requester": {
+      "type": "string"
+    },
     "roles": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["chief", "developer", "verifier"],
+      "required": [
+        "chief",
+        "developer",
+        "verifier"
+      ],
       "properties": {
-        "chief": { "type": "string", "description": "幕僚长 bot 名或 id" },
-        "developer": { "type": "string", "description": "开发助手" },
-        "verifier": { "type": "string", "description": "验证助手" }
+        "chief": {
+          "type": "string",
+          "description": "幕僚长 bot 名或 id"
+        },
+        "developer": {
+          "type": "string",
+          "description": "开发助手"
+        },
+        "verifier": {
+          "type": "string",
+          "description": "验证助手"
+        }
       }
     },
     "scope": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["goal", "in_scope", "out_of_scope"],
+      "required": [
+        "goal",
+        "in_scope",
+        "out_of_scope"
+      ],
       "properties": {
-        "goal": { "type": "string" },
-        "in_scope": { "type": "array", "items": { "type": "string" } },
-        "out_of_scope": { "type": "array", "items": { "type": "string" } }
+        "goal": {
+          "type": "string"
+        },
+        "in_scope": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "out_of_scope": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
       }
     },
     "acceptance": {
@@ -72,54 +115,106 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["id", "description", "command", "must_run", "pass_criteria"],
+        "required": [
+          "id",
+          "description",
+          "command",
+          "must_run",
+          "pass_criteria"
+        ],
         "properties": {
-          "id": { "type": "string" },
-          "description": { "type": "string" },
-          "command": { "type": "string" },
-          "must_run": { "type": "boolean", "description": "true 则未执行不得标验证通过" },
-          "pass_criteria": { "type": "string" }
+          "id": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "command": {
+            "type": "string"
+          },
+          "must_run": {
+            "type": "boolean",
+            "description": "true 则未执行不得标验证通过"
+          },
+          "pass_criteria": {
+            "type": "string"
+          }
         }
       }
     },
     "worktree": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["path", "branch"],
+      "required": [
+        "path",
+        "branch"
+      ],
       "properties": {
-        "path": { "type": "string" },
-        "branch": { "type": "string" }
+        "path": {
+          "type": "string"
+        },
+        "branch": {
+          "type": "string"
+        }
       }
     },
     "integration": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["branch"],
+      "required": [
+        "branch"
+      ],
       "properties": {
-        "branch": { "type": "string", "description": "Demo 本地集成分支，如 demo/integration" }
+        "branch": {
+          "type": "string",
+          "description": "Demo 本地集成分支，如 demo/integration"
+        }
       }
     },
     "merge_policy": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["mode"],
+      "required": [
+        "mode"
+      ],
       "properties": {
-        "mode": { "type": "string", "enum": ["confirm", "auto"] },
-        "notes": { "type": "string" }
+        "mode": {
+          "type": "string",
+          "enum": [
+            "confirm",
+            "auto"
+          ]
+        },
+        "notes": {
+          "type": "string"
+        }
       }
     },
     "artifact": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "commit": { "type": "string" },
-        "summary": { "type": "string" },
+        "commit": {
+          "type": "string"
+        },
+        "summary": {
+          "type": "string"
+        },
         "self_check": {
           "type": "object",
           "properties": {
-            "commands": { "type": "array", "items": { "type": "string" } },
-            "passed": { "type": "boolean" },
-            "log_path": { "type": "string" }
+            "commands": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "passed": {
+              "type": "boolean"
+            },
+            "log_path": {
+              "type": "string"
+            }
           }
         }
       }
@@ -128,25 +223,54 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "ran_at": { "type": "string" },
-        "result": { "type": "string", "enum": ["pass", "fail", "inconclusive"] },
-        "bound_commit": { "type": "string" },
+        "ran_at": {
+          "type": "string"
+        },
+        "result": {
+          "type": "string",
+          "enum": [
+            "pass",
+            "fail",
+            "inconclusive"
+          ]
+        },
+        "bound_commit": {
+          "type": "string"
+        },
         "checks": {
           "type": "array",
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["acceptance_id", "executed"],
+            "required": [
+              "acceptance_id",
+              "executed"
+            ],
             "properties": {
-              "acceptance_id": { "type": "string" },
-              "executed": { "type": "boolean" },
-              "exit_code": { "type": ["integer", "null"] },
-              "log_path": { "type": "string" },
+              "acceptance_id": {
+                "type": "string"
+              },
+              "executed": {
+                "type": "boolean"
+              },
+              "exit_code": {
+                "type": [
+                  "integer",
+                  "null"
+                ]
+              },
+              "log_path": {
+                "type": "string"
+              },
               "screenshot_paths": {
                 "type": "array",
-                "items": { "type": "string" }
+                "items": {
+                  "type": "string"
+                }
               },
-              "notes": { "type": "string" }
+              "notes": {
+                "type": "string"
+              }
             }
           }
         }
@@ -161,9 +285,15 @@
       "items": {
         "type": "object",
         "properties": {
-          "code": { "type": "string" },
-          "message": { "type": "string" },
-          "recovery_hint": { "type": "string" }
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "recovery_hint": {
+            "type": "string"
+          }
         }
       }
     },
@@ -173,11 +303,15 @@
       "properties": {
         "candidates": {
           "type": "array",
-          "items": { "type": "object" }
+          "items": {
+            "type": "object"
+          }
         },
         "published": {
           "type": "array",
-          "items": { "type": "object" }
+          "items": {
+            "type": "object"
+          }
         }
       }
     },
@@ -185,9 +319,20 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "attempted_at": { "type": "string" },
-        "result": { "type": "string", "enum": ["success", "failure", "blocked"] },
-        "notes": { "type": "string" }
+        "attempted_at": {
+          "type": "string"
+        },
+        "result": {
+          "type": "string",
+          "enum": [
+            "success",
+            "failure",
+            "blocked"
+          ]
+        },
+        "notes": {
+          "type": "string"
+        }
       }
     },
     "history": {
@@ -195,41 +340,166 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["at", "actor", "to"],
+        "required": [
+          "at",
+          "actor",
+          "to"
+        ],
         "properties": {
-          "at": { "type": "string" },
-          "actor": { "type": "string" },
-          "from": { "type": "string" },
-          "to": { "type": "string" },
-          "note": { "type": "string" }
+          "at": {
+            "type": "string"
+          },
+          "actor": {
+            "type": "string"
+          },
+          "from": {
+            "type": "string"
+          },
+          "to": {
+            "type": "string"
+          },
+          "note": {
+            "type": "string"
+          }
         }
       }
+    },
+    "budget": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Lite L4: optional hard budget. Exceeding → 受阻 with BUDGET_*.",
+      "properties": {
+        "max_attempts": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Max times task may enter 执行中"
+        },
+        "max_duration_sec": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Wall-clock seconds from first 执行中 entry"
+        },
+        "max_tokens": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Optional token budget (recorded via record-tokens)"
+        },
+        "attempts_used": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "How many times entered 执行中"
+        },
+        "started_at": {
+          "type": "string",
+          "description": "ISO time of first entry into 执行中"
+        },
+        "tokens_used": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Accumulated tokens recorded so far"
+        }
+      }
+    },
+    "resume": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Lite L3: 中断/受阻后的恢复锚点。resume_point 指示恢复到待执行|执行中|待验证。",
+      "properties": {
+        "resume_point": {
+          "type": "string",
+          "enum": [
+            "待执行",
+            "执行中",
+            "待验证"
+          ],
+          "description": "恢复时应迁往的状态"
+        },
+        "interrupted_at": {
+          "type": "string",
+          "description": "进入受阻的时间戳"
+        },
+        "artifact_commit_at_interrupt": {
+          "type": "string",
+          "description": "中断时已提交的 artifact.commit（若有）；恢复后若仍等于此值则勿重复提交"
+        },
+        "reason": {
+          "type": "string",
+          "description": "中断/受阻原因摘要"
+        }
+      }
+    },
+    "team": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Team v0.2 optional link: child task under a team run",
+      "properties": {
+        "team_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "role": {
+          "type": "string",
+          "description": "worker|eng_stub|nancy|matcha|chief|other"
+        },
+        "assignee": {
+          "type": "string"
+        },
+        "assigned_by": {
+          "type": "string"
+        },
+        "assigned_at": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "team_id"
+      ]
+    },
+    "parent_task_id": {
+      "type": "string",
+      "description": "Optional parent task id for hierarchy; Team children usually omit and use team.team_id"
     }
   },
   "allOf": [
     {
       "if": {
-        "properties": { "status": { "const": "验证通过" } },
-        "required": ["status"]
+        "properties": {
+          "status": {
+            "const": "验证通过"
+          }
+        },
+        "required": [
+          "status"
+        ]
       },
       "then": {
-        "required": ["verification", "artifact"],
+        "required": [
+          "verification",
+          "artifact"
+        ],
         "properties": {
           "verification": {
             "type": "object",
-            "required": ["result", "bound_commit", "checks"],
+            "required": [
+              "result",
+              "bound_commit",
+              "checks"
+            ],
             "properties": {
-              "result": { "const": "pass" }
+              "result": {
+                "const": "pass"
+              }
             }
           },
           "artifact": {
             "type": "object",
-            "required": ["commit"]
+            "required": [
+              "commit"
+            ]
           }
         }
       }
     }
   ],
-  "description": "Runtime MUST also enforce: every acceptance item with must_run=true has a checks[] entry with executed=true before status may be 验证通过. JSON Schema alone cannot express cross-array quantification portably."
+  "description": "Runtime MUST also enforce: every acceptance item with must_run=true has a checks[] entry with executed=true before status may be 验证通过. JSON Schema alone cannot express cross-array quantification portably. Optional Team v0.2 fields: team, parent_task_id."
 }
-
