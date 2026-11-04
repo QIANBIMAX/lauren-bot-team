@@ -14,7 +14,6 @@ build/
 workspace/runs/*
 !workspace/runs/.gitkeep
 .DS_Store
-._*
 Thumbs.db
 *.log
 .idea/

@@ -7,4 +7,4 @@
 | Task protocol schema | `lauren-task-protocol/0.1` | `lauren-team-kit/contracts/task-protocol.schema.json` |
 | Plan / M0 inputs | `/workspace/lauren-bot-demo-plan/` | 批件与调研权威输入 |
 
-No public GitHub remote for this delivery package in phase-1.
+Public remote exists: `https://github.com/QIANBIMAX/lauren-bot-team.git`. Delivery folder remains authoritative for unpushed patches; **no automatic push** (user must explicitly approve).

@@ -22,6 +22,33 @@ class VerifyGateError(ValueError):
         return f"验证硬门拒绝 → 验证通过：\n{body}"
 
 
+def _looks_like_git_sha(s: str) -> bool:
+    if len(s) < 7:
+        return False
+    return all(c in "0123456789abcdefABCDEF" for c in s)
+
+
+def commits_match(a: Any, b: Any) -> bool:
+    """True if two commit ids refer to the same revision.
+
+    Rules: strip whitespace; empty never matches; equal OK; if both look like
+    git SHAs, longer may startswith shorter when shorter length >= 7.
+    """
+    if not isinstance(a, str) or not isinstance(b, str):
+        return False
+    left = a.strip()
+    right = b.strip()
+    if not left or not right:
+        return False
+    if left == right:
+        return True
+    if _looks_like_git_sha(left) and _looks_like_git_sha(right):
+        longer, shorter = (left, right) if len(left) >= len(right) else (right, left)
+        if len(shorter) >= 7 and longer.lower().startswith(shorter.lower()):
+            return True
+    return False
+
+
 def must_run_acceptance_ids(task: dict[str, Any]) -> list[str]:
     acceptance = task.get("acceptance")
     if not isinstance(acceptance, list):
@@ -42,10 +69,12 @@ def evaluate_verify_gate(task: dict[str, Any]) -> list[str]:
 
     Rules before allowing → 验证通过 (or validating status already 验证通过):
     1. acceptance list present (non-empty)
-    2. every must_run=true item has checks[] entry with same acceptance_id and executed=true
+    2. every must_run=true item has checks[] entry with same acceptance_id,
+       executed=true, exit_code==0; if check has result, it must be pass
     3. verification.result == \"pass\"
     4. verification.bound_commit non-empty string
     5. artifact.commit non-empty string
+    6. artifact.commit 与 verification.bound_commit 一致（短/长 SHA 可互认）
     """
     errors: list[str] = []
     failed_ids: list[str] = []
@@ -63,6 +92,7 @@ def evaluate_verify_gate(task: dict[str, Any]) -> list[str]:
                 errors.append(f"acceptance[{i}] must_run=true 但缺少 id")
 
     verification = task.get("verification")
+    bound: Any = None
     if not isinstance(verification, dict):
         errors.append("缺少 verification 对象")
         for aid in must_ids:
@@ -78,6 +108,7 @@ def evaluate_verify_gate(task: dict[str, Any]) -> list[str]:
         bound = verification.get("bound_commit")
         if not isinstance(bound, str) or not bound.strip():
             errors.append("verification.bound_commit 必填且非空")
+            bound = None
 
         checks = verification.get("checks")
         if not isinstance(checks, list):
@@ -94,19 +125,48 @@ def evaluate_verify_gate(task: dict[str, Any]) -> list[str]:
             if c is None:
                 failed_ids.append(aid)
                 errors.append(f"must_run 验收项 {aid} 缺少 checks 记录")
-            elif c.get("executed") is not True:
+                continue
+            if c.get("executed") is not True:
                 failed_ids.append(aid)
                 errors.append(
                     f"must_run 验收项 {aid} 的 check.executed 不为 true（实际 {c.get('executed')!r}）"
                 )
+                continue
+            if "exit_code" not in c:
+                failed_ids.append(aid)
+                errors.append(f"must_run 验收项 {aid} 缺少 check.exit_code（必须为 0）")
+            elif c.get("exit_code") != 0:
+                failed_ids.append(aid)
+                errors.append(
+                    f"must_run 验收项 {aid} 的 check.exit_code 必须为 0（实际 {c.get('exit_code')!r}）"
+                )
+            if "result" in c and c.get("result") != "pass":
+                failed_ids.append(aid)
+                errors.append(
+                    f"must_run 验收项 {aid} 的 check.result 必须为 pass（实际 {c.get('result')!r}）"
+                )
 
     artifact = task.get("artifact")
+    commit: Any = None
     if not isinstance(artifact, dict):
         errors.append("缺少 artifact 对象")
     else:
         commit = artifact.get("commit")
         if not isinstance(commit, str) or not commit.strip():
             errors.append("artifact.commit 必填且非空")
+            commit = None
+
+    if (
+        isinstance(bound, str)
+        and bound.strip()
+        and isinstance(commit, str)
+        and commit.strip()
+        and not commits_match(commit, bound)
+    ):
+        errors.append(
+            f"artifact.commit 与 verification.bound_commit 不一致"
+            f"（artifact={commit.strip()!r}, bound={bound.strip()!r}）"
+        )
 
     if failed_ids:
         # summary line for parent/logs

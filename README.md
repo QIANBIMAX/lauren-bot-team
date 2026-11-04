@@ -11,7 +11,7 @@
 | 目录 | 作用 |
 |---|---|
 | `lauren-omb-pack/` | 可导入 OMB 的三角色团队包（幕僚长 / 开发助手 / 验证助手） |
-| `lauren-team-kit/` | 任务协议、状态机、验收门、合并预检（工程闭环） |
+| `lauren-team-kit/` | 任务协议、状态机、验收门、合并预检与确认后本地合并（工程闭环） |
 | `demo-app/` | 跨平台小型任务列表（筛选切片作首条闭环靶） |
 | `docs/` | 新手入门、安装、使用、合并策略、兼容表 |
 | `m0/` | Mac 实测证据与批件指针 |
@@ -33,11 +33,17 @@
 
 默认合并策略：`MERGE_POLICY=confirm`（见 `docs/merge-policy.md`）。**禁止**自动合公司主仓。
 
+## 证据与公开仓
+
+- OMB 委派探针归档：[`docs/runs/demo-c4.md`](docs/runs/demo-c4.md)（委派与验证有证据；**合并未完成**）
+- 公开仓已创建：<https://github.com/QIANBIMAX/lauren-bot-team.git>  
+  材料仍可以本文件夹为准；**默认不自动 push**，推送须另批。
+
 ## 延后项（诚实）
 
-- OMB 真机导入 / 委派 / 重启验收
+- OMB GUI 正式导入格式 / 重启恢复的系统验收
 - Windows / Linux
-- 公开 GitHub 远程仓
+- demo-c4 在 Demo 集成分支上的真实合并（需先 `init-integration`）
 
 ## 材料路径（附录）
 

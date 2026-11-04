@@ -21,6 +21,13 @@ from lauren_team_kit.protocol import (
 )
 from lauren_team_kit.state_machine import IllegalTransitionError, allowed_targets
 from lauren_team_kit.rule_check import run_rule
+from lauren_team_kit.merge_precheck import evaluate_merge_precheck
+from lauren_team_kit.merge import (
+    EXIT_AWAIT_CONFIRM,
+    execute_merge,
+    init_integration_branch,
+    plan_merge,
+)
 from lauren_team_kit.verify_gate import VerifyGateError, gate_report
 
 
@@ -219,84 +226,92 @@ def cmd_merge_precheck(args: argparse.Namespace) -> int:
         print(f"找不到 task: {path}", file=sys.stderr)
         return 1
     task = load_task(path)
-    status = task.get("status")
-    checklist: list[dict[str, Any]] = []
-    ok = True
-
-    status_ok = status in ("验证通过", "待合并")
-    checklist.append(
-        {
-            "item": "status_in_验证通过_or_待合并",
-            "ok": status_ok,
-            "detail": f"status={status!r}",
-        }
-    )
-    if not status_ok:
-        ok = False
-
-    mp = task.get("merge_policy")
-    mode_ok = isinstance(mp, dict) and isinstance(mp.get("mode"), str) and bool(mp.get("mode"))
-    checklist.append(
-        {
-            "item": "merge_policy.mode",
-            "ok": mode_ok,
-            "detail": None if not isinstance(mp, dict) else mp.get("mode"),
-        }
-    )
-    if not mode_ok:
-        ok = False
-
-    art = task.get("artifact") if isinstance(task.get("artifact"), dict) else {}
-    ver = task.get("verification") if isinstance(task.get("verification"), dict) else {}
-    commit = art.get("commit") or ver.get("bound_commit")
-    commit_ok = isinstance(commit, str) and bool(commit.strip())
-    checklist.append(
-        {
-            "item": "commit_present",
-            "ok": commit_ok,
-            "detail": commit if commit_ok else None,
-        }
-    )
-    if not commit_ok:
-        ok = False
-
-    ev_rel = task.get("evidence_dir")
-    root = Path(args.root).resolve() if args.root else path.parent.parent.parent.parent
-    # path = root/workspace/runs/id/task.json → parents[3]=root when structure matches
-    if args.root:
-        root = Path(args.root).resolve()
-    else:
-        # task.json → runs/id → runs → workspace → root
-        root = path.parent.parent.parent.parent
-    ev_path = None
-    if isinstance(ev_rel, str) and ev_rel:
-        ev_path = (root / ev_rel).resolve()
-    else:
-        ev_path = path.parent
-    ev_ok = ev_path.is_dir()
-    checklist.append(
-        {
-            "item": "evidence_dir_exists",
-            "ok": ev_ok,
-            "detail": str(ev_path),
-        }
-    )
-    if not ev_ok:
-        ok = False
-
-    report = {
-        "task_id": task.get("task_id"),
-        "status": status,
-        "ok": ok,
-        "checklist": checklist,
-        "note": "占位：不执行真实 merge",
-    }
+    root = Path(args.root).resolve() if getattr(args, "root", None) else None
+    report = evaluate_merge_precheck(task, root=root, task_file=path)
     print(json.dumps(report, ensure_ascii=False, indent=2))
-    if ok:
+    if report["ok"]:
         print("PASS merge-precheck")
         return 0
     print("FAIL merge-precheck", file=sys.stderr)
+    for item in report.get("checklist") or []:
+        if not item.get("ok"):
+            print(f"  - {item.get('item')}: {item.get('detail')}", file=sys.stderr)
     return 1
+
+
+
+
+def cmd_init_integration(args: argparse.Namespace) -> int:
+    """Create demo/integration (or named) branch from an explicit baseline."""
+    report = init_integration_branch(
+        args.worktree,
+        baseline=args.baseline,
+        branch=args.branch,
+        force=bool(args.force),
+    )
+    print(json.dumps(report, ensure_ascii=False, indent=2))
+    if report.get("ok"):
+        print("PASS init-integration" if report.get("created") or report.get("already_exists") else "OK init-integration")
+        return 0
+    print("FAIL init-integration", file=sys.stderr)
+    if report.get("error"):
+        print(f"  - {report['error']}", file=sys.stderr)
+    return 1
+
+
+def cmd_merge(args: argparse.Namespace) -> int:
+    """Confirm-gated local merge into integration branch (never push)."""
+    path = _resolve_or_exit(args)
+    if isinstance(path, int):
+        return path
+    if not path.is_file():
+        print(f"找不到 task: {path}", file=sys.stderr)
+        return 1
+    task = load_task(path)
+    root = Path(args.root).resolve() if getattr(args, "root", None) else None
+    if not getattr(args, "confirm", False):
+        # Still print plan when awaiting confirm
+        plan = plan_merge(task, root=root, task_file=path)
+        mp = task.get("merge_policy") if isinstance(task.get("merge_policy"), dict) else {}
+        if mp.get("mode") != "auto":
+            print(json.dumps({"action": "await_confirm", "plan": plan}, ensure_ascii=False, indent=2))
+            print(
+                "AWAIT confirm：未改 git。加 --confirm 才真正 merge（mode=auto 可免确认）。",
+                file=sys.stderr,
+            )
+            return EXIT_AWAIT_CONFIRM
+
+    post_paths = list(args.post_check_path) if getattr(args, "post_check_path", None) else None
+    result, updated = execute_merge(
+        task,
+        root=root,
+        task_file=path,
+        confirm=True,
+        actor=args.actor,
+        post_check_paths=post_paths,
+    )
+    if result.get("action") in (
+        "merged",
+        "already_merged",
+        "conflict",
+        "post_check_failed",
+        "transition_failed_after_merge",
+    ):
+        save_task(path, updated)
+
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    action = result.get("action")
+    if result.get("ok"):
+        print(f"PASS merge ({action})")
+        return 0
+    if result.get("exit_code") == EXIT_AWAIT_CONFIRM:
+        print("AWAIT confirm", file=sys.stderr)
+        return EXIT_AWAIT_CONFIRM
+    print(f"FAIL merge ({action})", file=sys.stderr)
+    if result.get("message"):
+        print(f"  - {result['message']}", file=sys.stderr)
+    return int(result.get("exit_code") or 1)
+
 
 
 def _parse_bool(s: str) -> bool:
@@ -389,7 +404,7 @@ def build_parser() -> argparse.ArgumentParser:
     _add_task_selectors(p_vg)
     p_vg.set_defaults(func=cmd_verify_gate)
 
-    p_mp = sub.add_parser("merge-precheck", help="合并前占位检查（不真实 merge）")
+    p_mp = sub.add_parser("merge-precheck", help="合并前本地 Git 预检（不执行 merge）")
     _add_task_selectors(p_mp)
     p_mp.set_defaults(func=cmd_merge_precheck)
 
@@ -405,11 +420,52 @@ def build_parser() -> argparse.ArgumentParser:
     p_rc.add_argument("--notes", default=None)
     p_rc.set_defaults(func=cmd_record_check)
 
+
+    p_ii = sub.add_parser(
+        "init-integration",
+        help="从明确基线创建本地 demo/integration（不猜测脏工作区；默认不覆盖）",
+    )
+    p_ii.add_argument("--worktree", required=True, help="git 工作区路径（Demo 仓库）")
+    p_ii.add_argument(
+        "--baseline",
+        required=True,
+        help="干净基线 commit/分支/标签（如 main 的完整 SHA）",
+    )
+    p_ii.add_argument(
+        "--branch",
+        default="demo/integration",
+        help="集成分支名（默认 demo/integration）",
+    )
+    p_ii.add_argument(
+        "--force",
+        action="store_true",
+        help="若分支已存在则强制移到基线（危险）",
+    )
+    p_ii.set_defaults(func=cmd_init_integration)
+
+    p_mg = sub.add_parser(
+        "merge",
+        help="确认后合入本地集成分支（默认需 --confirm；永不 push）",
+    )
+    _add_task_selectors(p_mg)
+    p_mg.add_argument(
+        "--confirm",
+        action="store_true",
+        help="真正执行 merge；缺省且 mode=confirm 时只打印计划并 exit 3",
+    )
+    p_mg.add_argument("--actor", default="merge", help="写入 history 的 actor")
+    p_mg.add_argument(
+        "--post-check-path",
+        action="append",
+        default=None,
+        help="合并后须存在的相对 worktree 路径（可多次）",
+    )
+    p_mg.set_defaults(func=cmd_merge)
+
     return parser
 
 
 def main(argv: list[str] | None = None) -> int:
-    # late import for type hint used in merge-precheck local
     parser = build_parser()
     args = parser.parse_args(argv)
     return int(args.func(args))

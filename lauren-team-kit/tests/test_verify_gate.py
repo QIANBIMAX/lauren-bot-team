@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 from pathlib import Path
 
 import pytest
@@ -16,7 +15,12 @@ from lauren_team_kit.protocol import (
     transition_task,
     validate_task,
 )
-from lauren_team_kit.verify_gate import VerifyGateError, evaluate_verify_gate, gate_report
+from lauren_team_kit.verify_gate import (
+    VerifyGateError,
+    commits_match,
+    evaluate_verify_gate,
+    gate_report,
+)
 
 
 def _to_pending_verify(tmp_path: Path, task_id: str = "g1") -> Path:
@@ -84,8 +88,8 @@ def test_verify_gate_cli_exit_codes(tmp_path: Path, capsys):
         acceptance_id="A1",
         executed=True,
         exit_code=0,
-        bound_commit="abc123",
-        artifact_commit="abc123",
+        bound_commit="abc1234",
+        artifact_commit="abc1234",
         result="pass",
     )
     save_task(path, task)
@@ -122,22 +126,80 @@ def test_executed_false_blocks(tmp_path: Path):
     assert any("executed" in e for e in report["errors"])
 
 
-def test_merge_precheck_cli(tmp_path: Path, capsys):
-    path = _to_pending_verify(tmp_path, task_id="g6")
-    root = str(tmp_path)
-    # still 待验证 → fail
-    assert main(["merge-precheck", "--task-id", "g6", "--root", root]) == 1
+def test_commits_match_short_long():
+    full = "deadbeefcafebabe0123456789abcdef01234567"
+    assert commits_match(full, "deadbee")
+    assert commits_match("deadbee", full)
+    assert commits_match("abc", "abc")
+    assert not commits_match("", "deadbeef")
+    assert not commits_match("deadbeef", "c0ffee00")
+    assert not commits_match("ab", "abcdef0")  # shorter < 7
+
+
+def test_commit_mismatch_fails(tmp_path: Path):
+    path = _to_pending_verify(tmp_path, task_id="g-mismatch")
     task = load_task(path)
     task = record_check(
         task,
         acceptance_id="A1",
         executed=True,
         exit_code=0,
-        bound_commit="c0ffee",
-        artifact_commit="c0ffee",
+        bound_commit="deadbeef",
+        artifact_commit="c0ffee00",
         result="pass",
     )
-    task = transition_task(task, to_status="验证通过", actor="verifier")
-    save_task(path, task)
-    assert main(["merge-precheck", "--task-id", "g6", "--root", root]) == 0
-    assert "PASS" in capsys.readouterr().out
+    errors = evaluate_verify_gate(task)
+    assert errors
+    assert any("不一致" in e for e in errors)
+
+
+def test_exit_code_nonzero_fails(tmp_path: Path):
+    path = _to_pending_verify(tmp_path, task_id="g-exit")
+    task = load_task(path)
+    task = record_check(
+        task,
+        acceptance_id="A1",
+        executed=True,
+        exit_code=1,
+        bound_commit="deadbeef",
+        artifact_commit="deadbeef",
+        result="pass",
+    )
+    errors = evaluate_verify_gate(task)
+    assert errors
+    assert any("exit_code" in e for e in errors)
+
+
+def test_matching_commits_and_exit_zero_pass(tmp_path: Path):
+    path = _to_pending_verify(tmp_path, task_id="g-ok")
+    task = load_task(path)
+    full = "abcdef0123456789abcdef0123456789abcdef01"
+    task = record_check(
+        task,
+        acceptance_id="A1",
+        executed=True,
+        exit_code=0,
+        bound_commit=full,
+        artifact_commit="abcdef0",
+        result="pass",
+    )
+    assert evaluate_verify_gate(task) == []
+
+
+def test_check_result_fail_blocks(tmp_path: Path):
+    path = _to_pending_verify(tmp_path, task_id="g-cres")
+    task = load_task(path)
+    task = record_check(
+        task,
+        acceptance_id="A1",
+        executed=True,
+        exit_code=0,
+        bound_commit="deadbeef",
+        artifact_commit="deadbeef",
+        result="pass",
+    )
+    # Inject check-level result=fail
+    checks = task["verification"]["checks"]
+    checks[0]["result"] = "fail"
+    errors = evaluate_verify_gate(task)
+    assert any("check.result" in e for e in errors)
