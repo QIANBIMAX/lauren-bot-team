@@ -2,6 +2,8 @@
 
 权威根：`/workspace/lauren-bot-team-v0.1/` ↔ F：`/Volumes/F/宁银理财/实习/lauren-bot-team-v0.1/`
 
+更新：2026-11-04 22:40+ Asia/Shanghai — demo-c4 已本地合入 `demo/integration`（ff）。
+
 ## 已齐
 - 三角色 pack（幕僚长 / 开发助手 / 验证助手）instructions + SOUL
 - `lauren-team-kit`：状态机 CLI、must_run 硬门、verify-gate / record-check / merge-precheck、`check-rule` / `preflight`
@@ -9,7 +11,7 @@
 - **merge-precheck 真实本地 Git 预检（2026-11-04）**：对照 HEAD/干净工作区/commit 存在/integration 分支/`merge-tree`
 - **真实本地 merge（2026-11-04）**：`init-integration` + `merge [--confirm]`；默认 confirm；幂等；冲突 abort；**永不 push**；只碰 Demo 集成分支
 - Demo C1 筛选 / C2 失败返工 / C3 经验复用
-- **demo-c4 OMB 委派归档**：见 [`docs/runs/demo-c4.md`](docs/runs/demo-c4.md)（委派✅ 验证✅ 合并❌）
+- **demo-c4 OMB 委派归档**：见 [`docs/runs/demo-c4.md`](docs/runs/demo-c4.md)（委派✅ 验证✅ 合并✅ ff/`6f21756`）
 - 文档：merge-policy、compatibility、新手入门 / 安装 / 使用指南
 
 ## 公开仓
@@ -18,8 +20,7 @@
 - 新人仍可只按文件夹部署，不强制从 GitHub 拉
 
 ## 延后 / 未验收
-- demo-c4 **尚未**真实合入 `demo/integration`（归档时分支未建）
-- 本地 Git 上验证门+预检+merge 的正式 commit（F 盘侧由父代理处理）；公开仓 push 待批
+- 公开仓 push 待用户明确批准（本地已 commit）
 - OMB GUI「正式导入格式」与 Windows / Linux 三平台新人验收
 - 恢复、预算、经验回写完整闭环（Lite L2–L5）
 

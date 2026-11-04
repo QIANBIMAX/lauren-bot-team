@@ -9,7 +9,7 @@
 |---|---|
 | 委派跑通（幕僚长 → 开发助手 → 验证助手） | ✅ 有证据 |
 | 验证通过（独立 must_run × 3，exit 0） | ✅ 有记录 |
-| 合并完成（合入 `demo/integration`） | ❌ **未完成** |
+| 合并完成（合入 `demo/integration`） | ✅ 2026-11-04 22:33 Asia/Shanghai（ff → 6f21756） |
 
 ## 环境
 
@@ -106,3 +106,15 @@ history 中「待验证 → 验证通过」与「验证通过 → 待合并」�
 | 任务 | `workspace/runs/demo-c4/task.json` |
 | 本报告 | `docs/runs/demo-c4.md` |
 | 环境摘录 | 同步时的 `demo-c4-env.txt` / `demo-c4-commit-stat.txt`（uploads） |
+
+
+## 真实合并（补记）
+
+- 时间：2026-11-04 22:33:37 Asia/Shanghai
+- 命令：`init-integration --baseline 96e054c…` → `merge --task-id demo-c4 --confirm --post-check-path hello.txt`
+- 方式：快进（ff）
+- `demo/integration`：`96e054c` → `6f2175675755dc6af714ebc585e5e1dfab2998e9`
+- 任务状态：`待合并` → `已完成`
+- 证据：`workspace/runs/demo-c4/merge/report.json`
+- 未做：push 远程；未碰公司主仓
+- 重复 `merge --confirm`：应幂等成功（`already_merged`）；若 kit 早于幂等修补，可能因 status=已完成 被预检拒绝（已修）

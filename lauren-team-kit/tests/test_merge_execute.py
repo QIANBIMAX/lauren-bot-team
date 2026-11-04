@@ -339,3 +339,28 @@ def test_merge_auto_mode_skips_confirm_flag(tmp_path: Path):
     rc = main(["merge", "--task-id", task_id, "--root", str(tmp_path)])
     assert rc == 0
     assert load_task(path)["status"] == "已完成"
+
+
+def test_merge_idempotent_when_already_completed(tmp_path: Path):
+    """status=已完成 + integration already has bound → already_merged, no git change."""
+    task_id = "mg-done-idem"
+    path = _task_pending_merge(tmp_path, task_id, "x")
+    task = load_task(path)
+    wt = tmp_path / task["worktree"]["path"]
+    _, feature = _init_repo(wt)
+    task["artifact"]["commit"] = feature
+    task["verification"]["bound_commit"] = feature
+    save_task(path, task)
+
+    r1, t1 = execute_merge(load_task(path), root=tmp_path, task_file=path, confirm=True)
+    assert r1["ok"] and r1["action"] == "merged"
+    save_task(path, t1)
+    assert load_task(path)["status"] == "已完成"
+    tip_before = _git(wt, "rev-parse", "demo/integration")
+
+    r2, t2 = execute_merge(load_task(path), root=tmp_path, task_file=path, confirm=True)
+    assert r2["ok"] is True
+    assert r2["action"] == "already_merged"
+    assert r2["exit_code"] == 0
+    assert t2["status"] == "已完成"
+    assert _git(wt, "rev-parse", "demo/integration") == tip_before

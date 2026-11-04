@@ -265,15 +265,6 @@ def execute_merge(
         )
         return result, task
 
-    # Re-run full precheck
-    precheck = evaluate_merge_precheck(task, root=project_root, task_file=tf)
-    result["precheck"] = precheck
-    if not precheck.get("ok"):
-        result["action"] = "precheck_failed"
-        result["exit_code"] = EXIT_FAIL
-        result["message"] = "执行前预检失败，拒绝 merge"
-        return result, task
-
     worktree = _resolve_worktree(project_root, task)
     integ = _integration_branch(task)
     if worktree is None or not integ:
@@ -305,7 +296,8 @@ def execute_merge(
             )
             return result, task
 
-    # Idempotent: already on integration history
+    # Idempotent before status precheck: already on integration history
+    # (covers status=已完成 re-requests without re-merging)
     integ_tip = _rev_parse_commit(worktree, integ)
     if integ_tip and _is_ancestor(worktree, bound_full, integ_tip):
         updated = dict(task)
@@ -356,6 +348,15 @@ def execute_merge(
         result["merge"] = merge_info
         result["message"] = merge_info["message"]
         return result, updated
+
+    # Re-run full precheck (only when not already merged)
+    precheck = evaluate_merge_precheck(task, root=project_root, task_file=tf)
+    result["precheck"] = precheck
+    if not precheck.get("ok"):
+        result["action"] = "precheck_failed"
+        result["exit_code"] = EXIT_FAIL
+        result["message"] = "执行前预检失败，拒绝 merge"
+        return result, task
 
     # Prepare transition to 待合并
     try:
