@@ -1,6 +1,7 @@
 """CLI：python -m demo_app <filter|list|seed> ...
 
 DEMO_FILTER_IMPL / --impl：buggy|fixed（默认 fixed）。C2 用 buggy 演示预置缺陷。
+limit：见 filter.filter_tasks；负值 → CLI exit 2。
 """
 
 from __future__ import annotations
@@ -62,7 +63,18 @@ def cmd_filter(ns: argparse.Namespace) -> int:
     tasks = load_tasks(str(data))
     # --query 未传 → None；显式传空串 → ""（fixed 安全空列表；buggy 抛异常）
     query = ns.query  # may be None
-    filtered = _filter_fn(impl)(tasks, status=ns.status, query=query)
+    limit = getattr(ns, "limit", None)
+    try:
+        filtered = _filter_fn(impl)(tasks, status=ns.status, query=query, limit=limit)
+    except TypeError:
+        # filter_buggy (C2) 尚未接受 limit；仅在未传 limit 时回退
+        if limit is not None:
+            print("filter impl does not support --limit", file=sys.stderr)
+            return 2
+        filtered = _filter_fn(impl)(tasks, status=ns.status, query=query)
+    except ValueError as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
     print(json.dumps(filtered, ensure_ascii=False, indent=2))
     return 0
 
@@ -87,6 +99,12 @@ def build_parser() -> argparse.ArgumentParser:
         "--query",
         default=None,
         help='keyword; empty string: fixed→[]; buggy→ValueError; omit for status-only',
+    )
+    s.add_argument(
+        "--limit",
+        type=int,
+        default=None,
+        help="max rows to return; 0→[]; omit=unlimited; negative→exit 2",
     )
     s.add_argument(
         "--impl",

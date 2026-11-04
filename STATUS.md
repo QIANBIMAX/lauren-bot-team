@@ -2,7 +2,7 @@
 
 权威根：`/workspace/lauren-bot-team-v0.1/` ↔ F：`/Volumes/F/宁银理财/实习/lauren-bot-team-v0.1/`
 
-更新：2026-11-04 22:40+ Asia/Shanghai — demo-c4 已本地合入 `demo/integration`（ff）。
+更新：2026-11-04 22:45+ Asia/Shanghai — Lite L2 demo-c5：权威根已备 limit 实现/测试/两轮补丁；F worktree 待真实 commit+验+merge。
 
 ## 已齐
 - 三角色 pack（幕僚长 / 开发助手 / 验证助手）instructions + SOUL
@@ -22,7 +22,14 @@
 ## 延后 / 未验收
 - 公开仓 push 待用户明确批准（本地已 commit）
 - OMB GUI「正式导入格式」与 Windows / Linux 三平台新人验收
-- 恢复、预算、经验回写完整闭环（Lite L2–L5）
+- Lite L2 在 F 盘完成两轮真实 commit/验证/merge 后归档 SHA
+- 恢复、预算、经验回写完整闭环（Lite L3–L5）
 
 ## 原则
 装好 OpenMausBot → 导入本包 → 跑 Demo。未跑过的检查不得标通过。合并默认 confirm，只针对 Demo 本地分支，不碰公司主仓，默认不 push。
+
+
+## demo-c5 (F 对齐, Asia/Shanghai)
+- task/demo-c5 round1 `5e96bd9` → round2 `4bb05f7`
+- demo/integration ff → `4bb05f7`
+- 证据目录 `workspace/runs/demo-c5/`；推送由人工确认
