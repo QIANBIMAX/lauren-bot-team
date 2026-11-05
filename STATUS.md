@@ -1,8 +1,18 @@
-# lauren-bot-team v0.1 进度（2026-11-05 14:30 Asia/Shanghai）
+# lauren-bot-team v0.1 进度（2026-11-05 Asia/Shanghai）
 
-公开仓：https://github.com/QIANBIMAX/lauren-bot-team.git（主路径 = clone → OMB Import）  
+公开仓：https://github.com/QIANBIMAX/lauren-bot-team.git（主路径 = clone → OMB Import）
 
-更新：2026-11-05 14:30 Asia/Shanghai — **Lite-E（独立发布）已补**（落 F，**勿 push**）。干净导入路径文档交叉一致；可勾选发布清单；三平台矩阵诚实；故障恢复文档；静态包校验脚本。**Lite 整包程序侧收口；GUI / 三平台待陛下。**
+## 下一焦点
+
+**Windows / Linux 原生 kit**（Lite + Team 共用 `lauren-team-kit`）。目标是 Windows 11 x64 与 Ubuntu 24.04 x64，macOS 只做回归。**不是 VibeX 的 Win/Linux，也不是 Full。** 已有 VibeX 材料保持延后，不删。
+
+计划：[`docs/win-linux-development-plan.md`](docs/win-linux-development-plan.md)。
+
+本切片只做 W0 doctor，以及 W2 里作为安全阻断的进程探活隔离（Windows 不再走 `os.kill(pid, 0)`）。W3 锁、W1 命令契约、W4 Demo、W5–W6、W7 工作台都在后续 PR。`omb_delegate` 真实桥接仍未接通，单独记账，不能写成已可用。
+
+代码、CI、自动测试在仓库里推进。OMB GUI 真机（桌面导入 / 委派 / 重启）留给人工在桌面环境做。没有证据之前，Win/Linux 仍是 **未测**，`platforms: any` 不是发布结论。
+
+更新：2026-11-05 — 焦点从 Lite 收口转到上述原生 kit。Lite-E 程序侧与文档仍以 `f0d1734` 为基线；GUI / 三平台验收没有因此变成已完成。
 
 ## 已齐
 - **Lite-E / 独立发布**：`docs/lite-release-checklist.md`（对照 §六 1–8）；`docs/lite-failure-recovery.md`；`docs/platforms.md` 矩阵；`lauren-team-kit/scripts/validate_lite_pack.py` + `tests/test_lite_e.py`
@@ -17,20 +27,20 @@
 ## Lite 整包结论
 | 段 | 状态 |
 |---|---|
-| Lite-A～D | 程序侧齐（含未提交 C+D+E 工作树） |
+| Lite-A～D | 程序侧齐（基线 `f0d1734`） |
 | Lite-E | 文档 + 静态校验齐 |
 | OMB GUI / 委派 / 重启 | **未验收（预览限制）** |
-| Win / Linux | **未测** |
+| Win / Linux | **未测**（原生 kit 已是当前焦点；尚无验收证据） |
 | Full | **未批开干** |
 
 ## 公开仓
 - https://github.com/QIANBIMAX/lauren-bot-team.git
-- tip（已 push）：`b6dea14`；本机工作树含 Lite-C/D/E **未提交**
+- 本线基线：`f0d1734`（Lite-C/D/E 已在该提交）。Win/Linux 原生 kit 接在其后。
 
 ## 延后 / 未验收
 - **OMB GUI 真机导入验收**（blocked）
-- Windows / Linux 三平台新人验收（platforms:any 非证据）
-- **真 OS 杀进程 / 断网 / 应用重启**级恢复
+- Windows / Linux 新人验收与 OMB 工作台（**仍未测**；`platforms: any` 非证据；原生 kit 见文首「下一焦点」，不是 VibeX）
+- **真 OS 杀进程 / 断网 / 应用重启**级恢复（Windows 探活已改为无副作用查询；受控取消进程树仍未做，不得宣称 OS 杀进程已验收）
 - **Full 产品线**（未批开干）
 
 ## 原则

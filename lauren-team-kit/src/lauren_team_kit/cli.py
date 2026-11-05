@@ -27,6 +27,7 @@ from lauren_team_kit.resume import (
     block_task,
     resume_task,
 )
+from lauren_team_kit.doctor import collect_report, exit_code, format_report
 from lauren_team_kit.runtime import (
     RuntimeGateError,
     acquire_lease,
@@ -1436,6 +1437,13 @@ def cmd_acquire_lease(args: argparse.Namespace) -> int:
 
 
 
+def cmd_doctor(args: argparse.Namespace) -> int:
+    """Print a machine-readable environment report. Does not mutate git or raise privileges."""
+    report = collect_report(root=getattr(args, "root", None))
+    sys.stdout.write(format_report(report))
+    return exit_code(report)
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="lauren-team-kit",
@@ -1443,6 +1451,17 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     sub = parser.add_subparsers(dest="command", required=True)
+
+    p_doc = sub.add_parser(
+        "doctor",
+        help="环境诊断 JSON（不写 git 配置、不提权、不探测 OMB）",
+    )
+    p_doc.add_argument(
+        "--root",
+        default=None,
+        help="额外检查该交付根是否可写",
+    )
+    p_doc.set_defaults(func=cmd_doctor)
 
     p_create = sub.add_parser("create", help="创建任务 JSON + 证据目录")
     p_create.add_argument("--title", required=True)
