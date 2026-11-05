@@ -2,7 +2,7 @@
 
 公开仓：https://github.com/QIANBIMAX/lauren-bot-team.git（主路径 = clone → OMB Import）  
 
-更新：2026-11-05 11:40 Asia/Shanghai — T4：lessons 探针审核/版本一致/加载接收回执 + test_t4_e2e；pytest；t1 标明旧协议。T3/T2/T1 保留。**GUI 真机未完成**。勿 push。勿开 T5。
+更新：2026-11-05 13:40 Asia/Shanghai — Lite-B：**L4 resume 预算门已补**（`resume_task`/`cmd_resume` → 执行中 与 `transition_with_budget` 同口径；超预算拒/受阻，不得静默进执行中）。T4–T0 保留。**GUI 真机未完成**。勿 push。
 
 ## 已齐
 - **T4**：`lesson-add` 须 scope/probe；`lesson-review` 批准须探针证据；publish 规则文件与 store `rules_version`/`content_hash` 一致；`lesson-rule-load`/`lesson-rule-receive` 回执；`test_t4_e2e.py` + `t4_e2e_smoke.sh`；t1 烟雾仅验旧协议/状态
@@ -13,6 +13,7 @@
 - `lauren-team-kit`：状态机 CLI、must_run 硬门、verify-gate / record-check / merge-precheck、`check-rule` / `preflight`
 - **验证门加固** + **merge-precheck 真实本地 Git** + **真实本地 merge**（confirm；永不默认 push）
 - Demo C1–C5；**Lite L3 demo-c6**；**L4 demo-c7**；**L5 demo-c8**
+- **Lite-B / L4**：`resume` → 执行中 走统一预算硬门（`gate_enter_executing`）；超限拒或 auto_block 留受阻；待执行/待验证恢复不误伤
 - **Team demo-t1**：Team API + 角色硬拦；材料目录 `lauren-omb-pack/team/`（与 Lite 平行）
 - **OMB 可导入物（文件已补，≠ GUI 已验收）**：
   - Lite：`lauren-omb-pack/lauren-lite.botmrr.md` + `lauren-omb-pack/team.mausteam.json`

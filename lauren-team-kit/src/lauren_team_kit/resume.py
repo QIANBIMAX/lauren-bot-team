@@ -86,12 +86,16 @@ def resume_task(
     actor: str,
     to_status: str | None = None,
     clear_blocker_code: str | None = None,
+    auto_block: bool = True,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     """Leave 受阻 toward stored (or overridden) resume_point.
 
     Idempotent when status is already not 受阻.
     Reports already_have_artifact when artifact.commit matches interrupt SHA
     (do not instruct a re-commit in that case).
+
+    When the resume target is 执行中, apply the same L4 budget hard gate as
+    ``transition_with_budget`` (lazy-imported to avoid a cycle with budget→resume).
     """
     status = str(task.get("status") or "")
     resume = task.get("resume") if isinstance(task.get("resume"), dict) else {}
@@ -152,6 +156,37 @@ def resume_task(
     note = f"resume → {target}"
     if already_have:
         note += "; already_have_artifact=true"
+
+    # Lite L4: resume → 执行中 must pass the same budget hard gate as transition.
+    if str(target) == "执行中":
+        from lauren_team_kit.budget import (
+            bump_exec_attempt,
+            gate_enter_executing,
+        )
+
+        blocked, gate_rep = gate_enter_executing(
+            task, actor=actor, auto_block=auto_block
+        )
+        if blocked is not None:
+            report["to_status"] = blocked.get("status")
+            report["action"] = "budget_blocked"
+            report["idempotent"] = False
+            report["violations"] = gate_rep.get("violations")
+            report["budget"] = gate_rep.get("budget")
+            return blocked, report
+
+        try:
+            updated = transition_task(
+                task, to_status=str(target), actor=actor, note=note
+            )
+        except IllegalTransitionError as e:
+            raise BlockResumeError(str(e)) from e
+        updated = bump_exec_attempt(updated)
+        report["to_status"] = target
+        report["idempotent"] = False
+        report["action"] = "resumed"
+        return updated, report
+
     try:
         updated = transition_task(task, to_status=str(target), actor=actor, note=note)
     except IllegalTransitionError as e:

@@ -470,7 +470,10 @@ def cmd_block(args: argparse.Namespace) -> int:
 
 
 def cmd_resume(args: argparse.Namespace) -> int:
-    """Leave 受阻 toward stored or overridden resume_point (Lite L3)."""
+    """Leave 受阻 toward stored or overridden resume_point (Lite L3).
+
+    Resume → 执行中 also applies Lite L4 budget hard gate (same as transition).
+    """
     path = _resolve_or_exit(args)
     if isinstance(path, int):
         return path
@@ -484,12 +487,14 @@ def cmd_resume(args: argparse.Namespace) -> int:
         )
         return 2
     task = load_task(path)
+    auto_block = not getattr(args, "no_budget_block", False)
     try:
         updated, report = resume_task(
             task,
             actor=args.actor,
             to_status=args.to,
             clear_blocker_code=args.clear_blocker_code,
+            auto_block=auto_block,
         )
     except BlockResumeError as e:
         print(str(e), file=sys.stderr)
@@ -497,7 +502,10 @@ def cmd_resume(args: argparse.Namespace) -> int:
     except IllegalTransitionError as e:
         print(str(e), file=sys.stderr)
         return 1
-    if report.get("action") == "resumed":
+    except BudgetError as e:
+        print(str(e), file=sys.stderr)
+        return 1
+    if report.get("action") in ("resumed", "budget_blocked"):
         save_task(path, updated)
     report_out = {
         **report,
@@ -511,6 +519,8 @@ def cmd_resume(args: argparse.Namespace) -> int:
         f"resume {path}: {report.get('from_status')} → {updated.get('status')} "
         f"(action={report.get('action')})"
     )
+    if report.get("action") == "budget_blocked":
+        return 1
     return 0
 
 
@@ -1521,6 +1531,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--clear-blocker-code",
         default=None,
         help="恢复时按 code 清除对应 blockers 项",
+    )
+    p_rs.add_argument(
+        "--no-budget-block",
+        action="store_true",
+        help="恢复到执行中时预算违规直接拒绝（不追加 blockers）",
     )
     p_rs.set_defaults(func=cmd_resume)
 

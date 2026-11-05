@@ -211,6 +211,88 @@ def record_tokens(
     return task
 
 
+def gate_enter_executing(
+    task: dict[str, Any],
+    *,
+    actor: str,
+    auto_block: bool = True,
+) -> tuple[dict[str, Any] | None, dict[str, Any]]:
+    """Unified L4 hard gate before entering 执行中.
+
+    Returns ``(None, ok_report)`` when the enter is allowed.
+    On violate + auto_block: returns ``(blocked_or_stayed_task, blocked_report)``.
+    On violate + not auto_block: raises BudgetError.
+
+    When the task is already 受阻, auto_block keeps it 受阻 (appends a blocker)
+    instead of calling block_task (受阻 is not blockable again).
+    """
+    report = evaluate_budget(task, pending_attempt=True)
+    if report["ok"]:
+        ok = dict(report)
+        ok["action"] = "ok"
+        return None, ok
+
+    if not auto_block:
+        codes = ",".join(v["code"] for v in report["violations"])
+        raise BudgetError(
+            f"预算硬门拒绝进入执行中: {codes}; "
+            + "; ".join(v["message"] for v in report["violations"])
+        )
+
+    primary = report["violations"][0]
+    hint = primary.get("recovery_hint") or _HINTS.get(
+        primary["code"], "调整预算后 resume"
+    )
+    blocked_report = {
+        "ok": False,
+        "action": "blocked",
+        "violations": report["violations"],
+        "budget": report.get("budget"),
+    }
+
+    status = str(task.get("status") or "")
+    if status == "受阻":
+        # Stay 受阻; append budget blocker so resume cannot silently re-enter.
+        stayed = dict(task)
+        blockers = list(stayed.get("blockers") or [])
+        blockers.append(
+            {
+                "code": primary["code"],
+                "message": primary["message"],
+                "recovery_hint": hint,
+            }
+        )
+        stayed["blockers"] = blockers
+        return stayed, blocked_report
+
+    blocked = block_task(
+        task,
+        code=primary["code"],
+        message=primary["message"],
+        recovery_hint=hint,
+        resume_point="待执行",
+        actor=actor,
+        reason=primary["message"],
+    )
+    return blocked, blocked_report
+
+
+def bump_exec_attempt(task: dict[str, Any]) -> dict[str, Any]:
+    """Increment attempts_used / stamp started_at after a successful enter 执行中."""
+    raw = task.get("budget")
+    if not isinstance(raw, dict):
+        return task
+    if not any(k in raw for k in ("max_attempts", "max_duration_sec", "max_tokens")):
+        return task
+    b = dict(raw)
+    b["attempts_used"] = int(b.get("attempts_used") or 0) + 1
+    if not b.get("started_at"):
+        b["started_at"] = _now_iso()
+    updated = dict(task)
+    updated["budget"] = b
+    return updated
+
+
 def transition_with_budget(
     task: dict[str, Any],
     *,
@@ -229,45 +311,27 @@ def transition_with_budget(
     """
     entering_exec = to_status == "执行中"
     if entering_exec:
-        report = evaluate_budget(task, pending_attempt=True)
-        if not report["ok"]:
-            if not auto_block:
-                codes = ",".join(v["code"] for v in report["violations"])
-                raise BudgetError(
-                    f"预算硬门拒绝进入执行中: {codes}; "
-                    + "; ".join(v["message"] for v in report["violations"])
-                )
-            primary = report["violations"][0]
-            blocked = block_task(
-                task,
-                code=primary["code"],
-                message=primary["message"],
-                recovery_hint=primary.get("recovery_hint") or _HINTS.get(primary["code"], "调整预算后 resume"),
-                resume_point="待执行",
-                actor=actor,
-                reason=primary["message"],
-            )
-            return blocked, {
-                "ok": False,
-                "action": "blocked",
-                "violations": report["violations"],
-                "budget": report.get("budget"),
-            }
+        blocked, gate_rep = gate_enter_executing(
+            task, actor=actor, auto_block=auto_block
+        )
+        if blocked is not None:
+            return blocked, gate_rep
 
-        updated = transition_task(task, to_status=to_status, actor=actor, note=note, role=role, profile=profile, root=root)
-        raw = updated.get("budget")
-        if isinstance(raw, dict) and any(
-            k in raw for k in ("max_attempts", "max_duration_sec", "max_tokens")
-        ):
-            b = dict(raw)
-            b["attempts_used"] = int(b.get("attempts_used") or 0) + 1
-            if not b.get("started_at"):
-                b["started_at"] = _now_iso()
-            updated = dict(updated)
-            updated["budget"] = b
+        updated = transition_task(
+            task,
+            to_status=to_status,
+            actor=actor,
+            note=note,
+            role=role,
+            profile=profile,
+            root=root,
+        )
+        updated = bump_exec_attempt(updated)
         ok_rep = evaluate_budget(updated, pending_attempt=False)
         ok_rep["action"] = "ok"
         return updated, ok_rep
 
-    updated = transition_task(task, to_status=to_status, actor=actor, note=note, role=role, profile=profile, root=root)
+    updated = transition_task(
+        task, to_status=to_status, actor=actor, note=note, role=role, profile=profile, root=root
+    )
     return updated, {"ok": True, "action": "ok", "violations": []}
