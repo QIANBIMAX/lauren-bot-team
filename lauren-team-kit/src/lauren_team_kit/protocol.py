@@ -10,6 +10,7 @@ from typing import Any
 
 from lauren_team_kit import SCHEMA_VERSION
 from lauren_team_kit.atomic_io import atomic_write_json, update_json_file
+from lauren_team_kit.paths import stable_dir_id
 from lauren_team_kit.authz import (
     AuthzError,
     Principal,
@@ -54,8 +55,16 @@ def _now_iso() -> str:
 
 
 def schema_path() -> Path:
-    """Prefer contracts/ next to installed package's parents, else walk up."""
+    """Schema shipped inside the package, else the repo contracts file.
+
+    A wheel install does not have the git checkout next to it, so the copy
+    under ``lauren_team_kit/data`` is the runtime file. ``contracts/`` stays
+    the edited source and must match that copy.
+    """
     here = Path(__file__).resolve()
+    packaged = here.parent / "data" / "task-protocol.schema.json"
+    if packaged.is_file():
+        return packaged
     candidates = [
         here.parents[2] / "contracts" / "task-protocol.schema.json",  # src/../contracts
         here.parents[3] / "contracts" / "task-protocol.schema.json",  # kit root
@@ -74,7 +83,8 @@ def schema_path() -> Path:
 
 
 def task_path_for(root: Path | str, task_id: str) -> Path:
-    return Path(root).resolve() / "workspace" / "runs" / task_id / "task.json"
+    """Task file under the stable directory id, not the raw external id."""
+    return Path(root).resolve() / "workspace" / "runs" / stable_dir_id(task_id) / "task.json"
 
 
 def load_task(path: Path | str) -> dict[str, Any]:
@@ -156,6 +166,38 @@ def structural_validate(task: dict[str, Any]) -> list[str]:
                     errors.append(f"acceptance[{i}] 缺少 {k}")
             if "must_run" in item and not isinstance(item["must_run"], bool):
                 errors.append(f"acceptance[{i}].must_run 必须为 boolean")
+            exec_obj = item.get("exec")
+            if exec_obj is not None:
+                if not isinstance(exec_obj, dict):
+                    errors.append(f"acceptance[{i}].exec 必须为 object")
+                else:
+                    kind = exec_obj.get("kind")
+                    if kind not in ("argv", "shell"):
+                        errors.append(f"acceptance[{i}].exec.kind 必须为 argv|shell")
+                    if kind == "argv":
+                        argv = exec_obj.get("argv")
+                        if (
+                            not isinstance(argv, list)
+                            or not argv
+                            or not all(isinstance(part, str) for part in argv)
+                        ):
+                            errors.append(f"acceptance[{i}].exec.argv 必须为非空字符串数组")
+                    timeout = exec_obj.get("timeout_sec")
+                    if timeout is not None and (
+                        isinstance(timeout, bool)
+                        or not isinstance(timeout, (int, float))
+                        or timeout <= 0
+                    ):
+                        errors.append(f"acceptance[{i}].exec.timeout_sec 必须为正数")
+                    env = exec_obj.get("env")
+                    if env is not None and (
+                        not isinstance(env, dict)
+                        or not all(
+                            isinstance(key, str) and isinstance(value, str)
+                            for key, value in env.items()
+                        )
+                    ):
+                        errors.append(f"acceptance[{i}].exec.env 的值必须为字符串")
     elif "acceptance" in task:
         errors.append("acceptance 必须为 array")
 
@@ -288,14 +330,20 @@ def create_task(
             {
                 "id": "A1",
                 "description": "demo-app 筛选 pytest 通过",
-                "command": "cd demo-app && .venv/bin/python -m pytest -q",
+                "command": "python -m pytest -q",
+                "exec": {
+                    "kind": "argv",
+                    "argv": ["{python}", "-m", "pytest", "-q"],
+                    "cwd": "demo-app",
+                    "timeout_sec": 180,
+                },
                 "must_run": True,
                 "pass_criteria": "exit_code==0",
             }
         ],
         "worktree": {
-            "path": f"workspace/runs/{task_id}/worktree",
-            "branch": f"task/{task_id}",
+            "path": f"workspace/runs/{stable_dir_id(task_id)}/worktree",
+            "branch": f"task/{stable_dir_id(task_id)}",
         },
         "integration": {"branch": "demo/integration"},
         "merge_policy": {"mode": "confirm"},
@@ -493,6 +541,7 @@ def record_check(
     trust_level: str | None = None,
     diagnostic: bool = False,
     new_round: bool = True,
+    exec_meta: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Upsert verification.checks with trust + round binding (T1).
 
@@ -583,6 +632,24 @@ def record_check(
             (notes + " | " if notes else "")
             + f"[{trust_stamp}; not counted by verify-gate]"
         )
+    if exec_meta:
+        for key in (
+            "outcome",
+            "argv",
+            "cwd",
+            "interpreter",
+            "command_type",
+            "started_at",
+            "finished_at",
+            "stdout_tail",
+            "stderr_tail",
+            "acceptance_fingerprint",
+        ):
+            if key in exec_meta and exec_meta[key] is not None:
+                entry[key] = exec_meta[key]
+        fingerprint = exec_meta.get("acceptance_fingerprint")
+        if isinstance(fingerprint, str) and fingerprint:
+            verification["acceptance_fingerprint"] = fingerprint
 
     found = False
     for i, c in enumerate(checks):

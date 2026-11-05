@@ -98,9 +98,28 @@ Lite 与 Team 是 **平行、对等的两套 Import 材料**，互不依赖、�
 
 新人 **只 Import Lite**：[`lauren-omb-pack/lauren-lite.botmrr.md`](lauren-omb-pack/lauren-lite.botmrr.md)（兼容 `team.mausteam.json`）。**OMB GUI 真机导入仍未验收。**
 
+## 原生 kit 预览（Windows / Ubuntu）
+
+Lite 与 Team 共用 `lauren-team-kit`。程序侧已包含跨进程锁、argv 验收、Python 场景和 wheel 安装。桌面 OMB 仍未验收。
+
+- Windows：[`docs/native-kit-windows.md`](docs/native-kit-windows.md)（`bootstrap.ps1` 被策略拦住时，文档里有直接的 Python 命令）
+- Ubuntu：[`docs/native-kit-ubuntu.md`](docs/native-kit-ubuntu.md)（`bootstrap.sh`）
+- 恢复：[`docs/native-kit-common.md`](docs/native-kit-common.md)
+- 矩阵：[`docs/platforms.md`](docs/platforms.md)（CI ≠ Windows 11 / Ubuntu 桌面）
+
+```bash
+python3 -m venv .venv
+.venv/bin/python -m pip install ./lauren-team-kit
+.venv/bin/python -m lauren_team_kit doctor
+.venv/bin/python -m lauren_team_kit.scenarios c1 --root .
+```
+
+Windows 把 `python3` / `.venv/bin/python` 换成 `py -3` 和 `.venv\Scripts\python.exe`。不要把模型 Key 写进仓库。
+
 ## 延后项（诚实）
 
-- OMB GUI 正式导入 / 委派 / 重启恢复的真机验收
-- Windows / Linux
+- OMB GUI 正式导入 / 委派 / 重启恢复的真机验收（W7）
+- Windows 11 与 Ubuntu 桌面会话的手跑验收（CI 不能代替）
+- Windows Job Object 取消整棵进程树（仍是 `windows_incomplete`）
 - **Full** 产品线（完整管理面 + Eng③④ 等；Eng 在 Team/Full **均永不写业务代码**，只协调/拆解转交）；Team ①②已是拆解转交中间层；③④未建
 - demo-c4 在 Demo 集成分支上的真实合并（需先 `init-integration`）

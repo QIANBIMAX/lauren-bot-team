@@ -8,6 +8,8 @@
 
 ## 验收探针
 
+requires_bash: true
+
 ```bash
 true
 ```

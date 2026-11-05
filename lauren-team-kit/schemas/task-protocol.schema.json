@@ -138,6 +138,41 @@
           },
           "pass_criteria": {
             "type": "string"
+          },
+          "exec": {
+            "type": "object",
+            "additionalProperties": false,
+            "description": "W1 structured execution. kind=argv runs argv with cwd/env/timeout_sec via subprocess (no shell). kind=shell runs the legacy command string only on a capable POSIX shell and is never split on shell operators. Windows does not fall through to Git Bash.",
+            "required": ["kind"],
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": ["argv", "shell"]
+              },
+              "argv": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "cwd": {
+                "type": "string"
+              },
+              "env": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "string"
+                }
+              },
+              "timeout_sec": {
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              "shell": {
+                "type": "string",
+                "enum": ["posix"]
+              }
+            }
           }
         }
       }
@@ -320,6 +355,48 @@
                   "fail",
                   "inconclusive"
                 ]
+              },
+              "outcome": {
+                "type": "string",
+                "enum": [
+                  "start_fail",
+                  "exit",
+                  "nonzero",
+                  "timeout",
+                  "cancel",
+                  "unknown"
+                ]
+              },
+              "argv": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "cwd": {
+                "type": "string"
+              },
+              "interpreter": {
+                "type": "string"
+              },
+              "command_type": {
+                "type": "string",
+                "enum": ["argv", "shell"]
+              },
+              "started_at": {
+                "type": "string"
+              },
+              "finished_at": {
+                "type": "string"
+              },
+              "stdout_tail": {
+                "type": "string"
+              },
+              "stderr_tail": {
+                "type": "string"
+              },
+              "acceptance_fingerprint": {
+                "type": "string"
               }
             }
           }
@@ -327,6 +404,10 @@
         "round_id": {
           "type": "string",
           "description": "T1 verification round id"
+        },
+        "acceptance_fingerprint": {
+          "type": "string",
+          "description": "W1: hash of acceptance[]. A new definition invalidates checks stamped with another fingerprint."
         },
         "trust": {
           "type": "string",

@@ -7,6 +7,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from lauren_team_kit.paths import PathRuleError, resolve_under_root, stable_dir_id
+
 
 class WorktreeError(ValueError):
     """Illegal or failed worktree setup."""
@@ -91,16 +93,26 @@ def assert_controlled_worktree_path(
     task_id = str(task.get("task_id") or "").strip()
     if not task_id:
         raise WorktreeError("缺少 task_id，无法校验受控路径")
-    target = path or resolve_worktree_path(root_p, task)
+    wt = task.get("worktree") if isinstance(task.get("worktree"), dict) else {}
+    raw = wt.get("path") if isinstance(wt.get("path"), str) else None
+    if raw is None and path is not None:
+        raw = str(path)
+    if not isinstance(raw, str) or not raw.strip():
+        raise WorktreeError("缺少 worktree.path")
     try:
-        target.relative_to(root_p)
-    except ValueError as e:
-        raise WorktreeError(
-            f"worktree.path 必须位于项目根 {root_p} 下；实际={target}"
-        ) from e
-    # Reject sneaky equality to root itself (must be a subpath)
-    if target == root_p:
-        raise WorktreeError("worktree.path 不能等于项目根，须为独立子目录")
+        target = resolve_under_root(root_p, raw.strip())
+    except PathRuleError as exc:
+        raise WorktreeError(str(exc)) from exc
+    if path is not None:
+        try:
+            explicit = Path(path).resolve()
+            explicit.relative_to(root_p)
+        except (OSError, ValueError) as exc:
+            raise WorktreeError(
+                f"worktree.path 必须位于项目根 {root_p} 下；实际={path}"
+            ) from exc
+        if explicit == root_p:
+            raise WorktreeError("worktree.path 不能等于项目根，须为独立子目录")
     return target
 
 
@@ -126,7 +138,7 @@ def bootstrap_task_base_repo(root: Path | str, task_id: str) -> Path:
     ``git worktree add``.
     """
     root_p = Path(root).resolve()
-    seed = root_p / "workspace" / "runs" / task_id / "_seed_repo"
+    seed = root_p / "workspace" / "runs" / stable_dir_id(task_id) / "_seed_repo"
     if is_git_repo(seed):
         return seed
     seed.mkdir(parents=True, exist_ok=True)

@@ -1,0 +1,787 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lauren-bot-team.local/schemas/task-protocol-0.1.json",
+  "title": "LaurenTaskProtocol",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "task_id",
+    "title",
+    "status",
+    "created_at",
+    "updated_at",
+    "requester",
+    "roles",
+    "scope",
+    "acceptance",
+    "worktree",
+    "integration",
+    "merge_policy",
+    "evidence_dir",
+    "history"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "lauren-task-protocol/0.1"
+    },
+    "task_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "待执行",
+        "执行中",
+        "待验证",
+        "验证通过",
+        "待合并",
+        "已完成",
+        "需修改",
+        "受阻",
+        "已取消",
+        "合并失败"
+      ]
+    },
+    "created_at": {
+      "type": "string",
+      "minLength": 1
+    },
+    "updated_at": {
+      "type": "string",
+      "minLength": 1
+    },
+    "requester": {
+      "type": "string"
+    },
+    "roles": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "chief",
+        "developer",
+        "verifier"
+      ],
+      "properties": {
+        "chief": {
+          "type": "string",
+          "description": "幕僚长 bot 名或 id"
+        },
+        "developer": {
+          "type": "string",
+          "description": "开发助手"
+        },
+        "verifier": {
+          "type": "string",
+          "description": "验证助手"
+        }
+      }
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "goal",
+        "in_scope",
+        "out_of_scope"
+      ],
+      "properties": {
+        "goal": {
+          "type": "string"
+        },
+        "in_scope": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "out_of_scope": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "acceptance": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "description",
+          "command",
+          "must_run",
+          "pass_criteria"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "command": {
+            "type": "string"
+          },
+          "must_run": {
+            "type": "boolean",
+            "description": "true 则未执行不得标验证通过"
+          },
+          "pass_criteria": {
+            "type": "string"
+          },
+          "exec": {
+            "type": "object",
+            "additionalProperties": false,
+            "description": "W1 structured execution. kind=argv runs argv with cwd/env/timeout_sec via subprocess (no shell). kind=shell runs the legacy command string only on a capable POSIX shell and is never split on shell operators. Windows does not fall through to Git Bash.",
+            "required": ["kind"],
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": ["argv", "shell"]
+              },
+              "argv": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "cwd": {
+                "type": "string"
+              },
+              "env": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "string"
+                }
+              },
+              "timeout_sec": {
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              "shell": {
+                "type": "string",
+                "enum": ["posix"]
+              }
+            }
+          }
+        }
+      }
+    },
+    "worktree": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "branch"
+      ],
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "branch": {
+          "type": "string"
+        },
+        "created": {
+          "type": "boolean",
+          "description": "Lite-C: true after real git worktree create/verify"
+        },
+        "created_at": {
+          "type": "string"
+        },
+        "verified_at": {
+          "type": "string"
+        },
+        "base_repo": {
+          "type": "string",
+          "description": "Git base repo used for worktree add"
+        },
+        "protocol_only": {
+          "type": "boolean",
+          "description": "Deprecated/debug: path field only; must not be true for real start"
+        }
+      }
+    },
+    "integration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "branch"
+      ],
+      "properties": {
+        "branch": {
+          "type": "string",
+          "description": "Demo 本地集成分支，如 demo/integration"
+        }
+      }
+    },
+    "merge_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode"
+      ],
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": [
+            "confirm",
+            "auto"
+          ]
+        },
+        "notes": {
+          "type": "string"
+        }
+      }
+    },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "commit": {
+          "type": "string"
+        },
+        "summary": {
+          "type": "string"
+        },
+        "self_check": {
+          "type": "object",
+          "properties": {
+            "commands": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "passed": {
+              "type": "boolean"
+            },
+            "log_path": {
+              "type": "string"
+            }
+          }
+        },
+        "set_by": {
+          "type": "string"
+        },
+        "set_role": {
+          "type": "string"
+        },
+        "set_at": {
+          "type": "string"
+        },
+        "trust": {
+          "type": "string"
+        }
+      }
+    },
+    "verification": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "ran_at": {
+          "type": "string"
+        },
+        "result": {
+          "type": "string",
+          "enum": [
+            "pass",
+            "fail",
+            "inconclusive"
+          ]
+        },
+        "bound_commit": {
+          "type": "string"
+        },
+        "checks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "acceptance_id",
+              "executed"
+            ],
+            "properties": {
+              "acceptance_id": {
+                "type": "string"
+              },
+              "executed": {
+                "type": "boolean"
+              },
+              "exit_code": {
+                "type": [
+                  "integer",
+                  "null"
+                ]
+              },
+              "log_path": {
+                "type": "string"
+              },
+              "screenshot_paths": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "notes": {
+                "type": "string"
+              },
+              "trust": {
+                "type": "string"
+              },
+              "round_id": {
+                "type": "string"
+              },
+              "recorded_by": {
+                "type": "string"
+              },
+              "recorded_role": {
+                "type": "string"
+              },
+              "result": {
+                "type": "string",
+                "enum": [
+                  "pass",
+                  "fail",
+                  "inconclusive"
+                ]
+              },
+              "outcome": {
+                "type": "string",
+                "enum": [
+                  "start_fail",
+                  "exit",
+                  "nonzero",
+                  "timeout",
+                  "cancel",
+                  "unknown"
+                ]
+              },
+              "argv": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "cwd": {
+                "type": "string"
+              },
+              "interpreter": {
+                "type": "string"
+              },
+              "command_type": {
+                "type": "string",
+                "enum": ["argv", "shell"]
+              },
+              "started_at": {
+                "type": "string"
+              },
+              "finished_at": {
+                "type": "string"
+              },
+              "stdout_tail": {
+                "type": "string"
+              },
+              "stderr_tail": {
+                "type": "string"
+              },
+              "acceptance_fingerprint": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "round_id": {
+          "type": "string",
+          "description": "T1 verification round id"
+        },
+        "acceptance_fingerprint": {
+          "type": "string",
+          "description": "W1: hash of acceptance[]. A new definition invalidates checks stamped with another fingerprint."
+        },
+        "trust": {
+          "type": "string",
+          "enum": [
+            "verified_run",
+            "diagnostic",
+            "imported_evidence"
+          ]
+        },
+        "verifier": {
+          "type": "string"
+        },
+        "archived_checks": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "diagnostic_result": {
+          "type": "string"
+        },
+        "diagnostic_bound_commit": {
+          "type": "string"
+        }
+      }
+    },
+    "evidence_dir": {
+      "type": "string",
+      "description": "相对路径，推荐 workspace/runs/<task_id>/"
+    },
+    "blockers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "recovery_hint": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "lessons": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "candidates": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "published": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        }
+      }
+    },
+    "merge": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "attempted_at": {
+          "type": "string"
+        },
+        "result": {
+          "type": "string",
+          "enum": [
+            "success",
+            "failure",
+            "blocked"
+          ]
+        },
+        "notes": {
+          "type": "string"
+        },
+        "already_merged": {
+          "type": "boolean"
+        },
+        "already_in_integration": {
+          "type": "boolean"
+        },
+        "integration_before": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "integration_after": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "bound": {
+          "type": "string"
+        },
+        "method": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        },
+        "report_path": {
+          "type": "string"
+        },
+        "post_check": {
+          "type": "object"
+        },
+        "acceptance_ok": {
+          "type": "boolean"
+        },
+        "acceptance_errors": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "conflict": {
+          "type": "boolean"
+        },
+        "error": {
+          "type": "string"
+        },
+        "orig_branch": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "history": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "at",
+          "actor",
+          "to"
+        ],
+        "properties": {
+          "at": {
+            "type": "string"
+          },
+          "actor": {
+            "type": "string"
+          },
+          "from": {
+            "type": "string"
+          },
+          "to": {
+            "type": "string"
+          },
+          "note": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string",
+            "description": "T1 authorized role at transition"
+          }
+        }
+      }
+    },
+    "resume": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Lite L3: 中断/受阻后的恢复锚点。resume_point 指示恢复到待执行|执行中|待验证。",
+      "properties": {
+        "resume_point": {
+          "type": "string",
+          "enum": [
+            "待执行",
+            "执行中",
+            "待验证"
+          ],
+          "description": "恢复时应迁往的状态"
+        },
+        "interrupted_at": {
+          "type": "string",
+          "description": "进入受阻的时间戳"
+        },
+        "artifact_commit_at_interrupt": {
+          "type": "string",
+          "description": "中断时已提交的 artifact.commit（若有）；恢复后若仍等于此值则勿重复提交"
+        },
+        "reason": {
+          "type": "string",
+          "description": "中断/受阻原因摘要"
+        }
+      }
+    },
+    "budget": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Lite L4: optional hard budget. Exceeding → 受阻 with BUDGET_*.",
+      "properties": {
+        "max_attempts": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Max times task may enter 执行中"
+        },
+        "max_duration_sec": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Wall-clock seconds from first 执行中 entry"
+        },
+        "max_tokens": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Optional token budget (recorded via record-tokens)"
+        },
+        "attempts_used": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "How many times entered 执行中"
+        },
+        "started_at": {
+          "type": "string",
+          "description": "ISO time of first entry into 执行中"
+        },
+        "tokens_used": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Accumulated tokens recorded so far"
+        }
+      }
+    },
+    "team": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Team optional link: child task under a team run. Allowed keys: team_id, role, assignee, assigned_by, assigned_at. Do NOT put parent_task_id here.",
+      "properties": {
+        "team_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "role": {
+          "type": "string",
+          "description": "worker|eng_stub|nancy|matcha|chief|other"
+        },
+        "assignee": {
+          "type": "string"
+        },
+        "assigned_by": {
+          "type": "string"
+        },
+        "assigned_at": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "team_id"
+      ]
+    },
+    "parent_task_id": {
+      "type": "string",
+      "description": "Optional TOP-LEVEL parent task id for hierarchy (e.g. Eng handoff to developer). MUST NOT be nested under team (team.additionalProperties=false). Distinct from team.team_id."
+    },
+    "executor_lease": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Lite-C L5: executor lease for cancel/reconcile (protocol-level; OS kill not claimed verified)",
+      "properties": {
+        "holder": {
+          "type": "string"
+        },
+        "pid": {
+          "type": "integer"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "active",
+            "released",
+            "cancel_requested",
+            "cancelled",
+            "stale"
+          ]
+        },
+        "acquired_at": {
+          "type": "string"
+        },
+        "heartbeat_at": {
+          "type": "string"
+        },
+        "released_at": {
+          "type": "string"
+        },
+        "release_reason": {
+          "type": "string"
+        },
+        "cancel_requested": {
+          "type": "boolean"
+        },
+        "cancel_requested_at": {
+          "type": "string"
+        },
+        "note": {
+          "type": "string"
+        }
+      }
+    },
+    "cancel": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Lite-C: cancel evidence blob (os_kill_verified must stay honest)",
+      "properties": {
+        "at": {
+          "type": "string"
+        },
+        "actor": {
+          "type": "string"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "os_kill_verified": {
+          "type": "boolean"
+        },
+        "note": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "验证通过"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "then": {
+        "required": [
+          "verification",
+          "artifact"
+        ],
+        "properties": {
+          "verification": {
+            "type": "object",
+            "required": [
+              "result",
+              "bound_commit",
+              "checks"
+            ],
+            "properties": {
+              "result": {
+                "const": "pass"
+              }
+            }
+          },
+          "artifact": {
+            "type": "object",
+            "required": [
+              "commit"
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "description": "Runtime MUST also enforce: every acceptance item with must_run=true has a checks[] entry with executed=true before status may be 验证通过. JSON Schema alone cannot express cross-array quantification portably. Optional Team fields: team, parent_task_id."
+}

@@ -1,0 +1,8 @@
+# Kit sources and scripts use LF. PowerShell entry scripts stay CRLF.
+# Content identity for acceptance uses a newline-normalized digest
+# (see lauren_team_kit.paths.newline_normalized_digest): CRLF and LF of the
+# same text share that digest; the raw byte digest stays different.
+* text=auto eol=lf
+*.ps1 text eol=crlf
+*.bat text eol=crlf
+*.cmd text eol=crlf

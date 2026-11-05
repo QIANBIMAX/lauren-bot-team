@@ -1437,6 +1437,51 @@ def cmd_acquire_lease(args: argparse.Namespace) -> int:
 
 
 
+def cmd_run_acceptance(args: argparse.Namespace) -> int:
+    """Run every must_run check in one round. Shell strings are not split."""
+    path = _resolve_or_exit(args)
+    if isinstance(path, int):
+        return path
+    if not path.is_file():
+        print(f"找不到 task: {path}", file=sys.stderr)
+        return 1
+    root = _root_from_args(args, path)
+    if root is None:
+        print("run-acceptance 需要 --root（cwd 与相对路径以此为基准）", file=sys.stderr)
+        return 2
+    from lauren_team_kit.exec_run import run_must_run_round
+
+    task = load_task(path)
+    try:
+        updated, summary = run_must_run_round(task, base=root)
+    except AuthzError as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
+    bound = getattr(args, "bound_commit", None)
+    if bound:
+        verification = dict(updated.get("verification") or {})
+        verification["bound_commit"] = bound
+        updated["verification"] = verification
+    save_task(path, updated)
+    print(json.dumps({k: v for k, v in summary.items() if k != "results"}, ensure_ascii=False, indent=2))
+    print(f"run-acceptance ok={summary.get('ok')} round_id={summary.get('round_id')}")
+    return 0 if summary.get("ok") else 1
+
+
+def cmd_scenario(args: argparse.Namespace) -> int:
+    """Windows and POSIX entry for the shared Python scenario runner."""
+    from lauren_team_kit.scenarios import main as scenario_main
+
+    argv = [args.name, "--root", args.root]
+    if args.task_id:
+        argv.extend(["--task-id", args.task_id])
+    if args.team_id:
+        argv.extend(["--team-id", args.team_id])
+    if args.force:
+        argv.append("--force")
+    return scenario_main(argv)
+
+
 def cmd_doctor(args: argparse.Namespace) -> int:
     """Print a machine-readable environment report. Does not mutate git or raise privileges."""
     report = collect_report(root=getattr(args, "root", None))
@@ -1462,6 +1507,17 @@ def build_parser() -> argparse.ArgumentParser:
         help="额外检查该交付根是否可写",
     )
     p_doc.set_defaults(func=cmd_doctor)
+
+    p_sc = sub.add_parser(
+        "scenario",
+        help="运行 C/T Python 场景（默认不 --force 覆盖已有演示）",
+    )
+    p_sc.add_argument("name", choices=["c1", "c2", "c3", "c6", "c7", "c8", "t1", "t2", "t3", "t4"])
+    p_sc.add_argument("--root", required=True)
+    p_sc.add_argument("--task-id", default=None)
+    p_sc.add_argument("--team-id", default=None)
+    p_sc.add_argument("--force", action="store_true")
+    p_sc.set_defaults(func=cmd_scenario)
 
     p_create = sub.add_parser("create", help="创建任务 JSON + 证据目录")
     p_create.add_argument("--title", required=True)
@@ -1519,6 +1575,18 @@ def build_parser() -> argparse.ArgumentParser:
     p_vg = sub.add_parser("verify-gate", help="评估 must_run×checks 硬门（不改状态）")
     _add_task_selectors(p_vg)
     p_vg.set_defaults(func=cmd_verify_gate)
+
+    p_ra = sub.add_parser(
+        "run-acceptance",
+        help="同一轮执行全部 must_run（argv/cwd/env/timeout；旧 shell 字符串不拆词）",
+    )
+    _add_task_selectors(p_ra)
+    p_ra.add_argument(
+        "--bound-commit",
+        default=None,
+        help="可选：写入 verification.bound_commit（不代替 set-artifact）",
+    )
+    p_ra.set_defaults(func=cmd_run_acceptance)
 
     p_mp = sub.add_parser("merge-precheck", help="合并前本地 Git 预检（不执行 merge）")
     _add_task_selectors(p_mp)

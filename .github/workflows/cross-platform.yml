@@ -1,5 +1,6 @@
-# Native kit skeleton. windows-latest is not Windows 11 desktop / OMB acceptance.
-# Full Demo Bash scenarios stay Mac/Linux-only until W4; this workflow does not run them.
+# Native kit CI. windows-latest is not Windows 11 desktop / OMB acceptance.
+# ubuntu-24.04 is not Ubuntu desktop / OMB acceptance.
+# Python scenarios run inside pytest. Bash files are thin wrappers only.
 name: cross-platform
 
 on:
@@ -42,8 +43,14 @@ jobs:
         working-directory: lauren-team-kit
         run: python -m pytest tests -q --tb=short
 
-      - name: Demo Bash scope
+      - name: Wheel install outside the source tree
+        working-directory: lauren-team-kit
+        run: python scripts/verify_wheel_install.py
+
+      - name: What this job is not
         shell: bash
         run: |
-          echo "Full Demo Bash scenarios (lauren-team-kit/scripts/*.sh and demo-app bash smokes) remain Mac/Linux-only until W4."
-          echo "This job does not treat those scripts as Windows or Ubuntu desktop evidence, and windows-latest is not Windows 11 OMB acceptance."
+          echo "Pytest includes lock, process, rule, and scenario tests. Do not skip those to go green."
+          echo "windows-latest is not Windows 11 desktop or OMB acceptance."
+          echo "ubuntu-24.04 is not Ubuntu desktop or OMB acceptance."
+          echo "Job Object cancel of a Windows process tree is still windows_incomplete."

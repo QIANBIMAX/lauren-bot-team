@@ -218,7 +218,9 @@ def refuse_forbidden_payload(
 
 
 def team_dir(root: Path | str, team_id: str) -> Path:
-    return Path(root).resolve() / "workspace" / "runs" / team_id
+    from lauren_team_kit.paths import stable_dir_id
+
+    return Path(root).resolve() / "workspace" / "runs" / stable_dir_id(team_id)
 
 
 def team_path_for(root: Path | str, team_id: str) -> Path:
@@ -258,6 +260,12 @@ def create_team(
     now = _now_iso()
     stubs = list(eng_stubs) if eng_stubs else ["Eng-A", "Eng-B"]
     tdir = team_dir(root_p, team_id)
+    from lauren_team_kit.paths import PathRuleError, assert_no_case_collision, stable_dir_id
+
+    try:
+        assert_no_case_collision(tdir.parent, stable_dir_id(team_id))
+    except PathRuleError as exc:
+        raise TeamError(str(exc)) from exc
     for sub in ("nancy", "matcha", "eng", "logs", "summaries"):
         (tdir / sub).mkdir(parents=True, exist_ok=True)
     team: dict[str, Any] = {
