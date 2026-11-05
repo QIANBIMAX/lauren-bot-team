@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# demo-t1 Team：双任务 + Nancy 汇总 + Matcha 指派（Eng stub）
+# demo-t1 Team：双任务 + Nancy 汇总 + Matcha 指派（Eng 拆解转交中间层；本烟雾仍走旧协议状态）
+# 旧协议/状态烟雾；T4 E2E 见 tests/test_t4_e2e.py（及可选 scripts/t4_e2e_smoke.sh）。勿用本脚本冒充 T4 全链。
 set -euo pipefail
 KIT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 ROOT="$(cd "${KIT_ROOT}/.." && pwd)"
@@ -26,17 +27,17 @@ kit team-add-task --root "$ROOT" --team-id "$TEAM_ID" --task-id demo-t1-beta \
   --title "Beta：烟雾脚本接线" --actor Matcha --force
 
 kit team-assign --root "$ROOT" --team-id "$TEAM_ID" --task-id demo-t1-alpha \
-  --assignee Eng-A --actor Matcha --note "stub track only"
+  --assignee Eng-A --actor Matcha --note "eng mid-layer track (T0; real handoff T2)"
 kit team-assign --root "$ROOT" --team-id "$TEAM_ID" --task-id demo-t1-beta \
-  --assignee Eng-B --actor Matcha --note "stub track only"
+  --assignee Eng-B --actor Matcha --note "eng mid-layer track (T0; real handoff T2)"
 
 # Advance children into 执行中 without fake verify
-kit transition --task-id demo-t1-alpha --root "$ROOT" --to 执行中 --actor Eng-A --note "stub start"
-kit transition --task-id demo-t1-beta --root "$ROOT" --to 执行中 --actor Eng-B --note "stub start"
+kit transition --task-id demo-t1-alpha --root "$ROOT" --to 执行中 --actor Eng-A --note "eng acknowledge start"
+kit transition --task-id demo-t1-beta --root "$ROOT" --to 执行中 --actor Eng-B --note "eng acknowledge start"
 # Simulate one blocker on beta → escalate via Nancy summarize
 kit block --task-id demo-t1-beta --root "$ROOT" \
-  --code WAITING_ENG --message "Eng stub 等待真实实现" \
-  --recovery-hint "Full Eng 不在本切片；保持 stub" \
+  --code WAITING_ENG --message "Eng 等待真实 Developer 委派（T2）" \
+  --recovery-hint "真 OMB 委派属 T2；Eng 永不写业务代码" \
   --resume-point 执行中 --actor Matcha
 
 kit team-summarize --root "$ROOT" --team-id "$TEAM_ID" --actor Nancy \

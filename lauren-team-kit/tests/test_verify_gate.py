@@ -12,9 +12,11 @@ from lauren_team_kit.protocol import (
     load_task,
     record_check,
     save_task,
+    set_artifact_commit,
     transition_task,
     validate_task,
 )
+from _seed import seed_trusted_pass
 from lauren_team_kit.verify_gate import (
     VerifyGateError,
     commits_match,
@@ -48,15 +50,7 @@ def test_transition_to_verified_without_checks_fails(tmp_path: Path):
 def test_transition_succeeds_after_record_check(tmp_path: Path):
     path = _to_pending_verify(tmp_path, task_id="g2")
     task = load_task(path)
-    task = record_check(
-        task,
-        acceptance_id="A1",
-        executed=True,
-        exit_code=0,
-        bound_commit="deadbeef",
-        artifact_commit="deadbeef",
-        result="pass",
-    )
+    task = seed_trusted_pass(task, commit="deadbeef")
     save_task(path, task)
     assert evaluate_verify_gate(task) == []
     updated = transition_task(task, to_status="验证通过", actor="verifier")
@@ -83,15 +77,7 @@ def test_verify_gate_cli_exit_codes(tmp_path: Path, capsys):
     assert "FAIL" in err or "A1" in err
 
     task = load_task(path)
-    task = record_check(
-        task,
-        acceptance_id="A1",
-        executed=True,
-        exit_code=0,
-        bound_commit="abc1234",
-        artifact_commit="abc1234",
-        result="pass",
-    )
+    task = seed_trusted_pass(task, commit="abc1234")
     save_task(path, task)
     rc2 = main(["verify-gate", "--task-id", "g3", "--root", root])
     assert rc2 == 0
@@ -112,14 +98,16 @@ def test_strict_verify_flag(tmp_path: Path):
 def test_executed_false_blocks(tmp_path: Path):
     path = _to_pending_verify(tmp_path, task_id="g5")
     task = load_task(path)
+    task = set_artifact_commit(task, commit="x", actor="developer", role="developer")
     task = record_check(
         task,
         acceptance_id="A1",
         executed=False,
         exit_code=1,
         bound_commit="x",
-        artifact_commit="x",
         result="pass",
+        actor="verifier",
+        role="verifier",
     )
     report = gate_report(task)
     assert report["ok"] is False
@@ -139,14 +127,16 @@ def test_commits_match_short_long():
 def test_commit_mismatch_fails(tmp_path: Path):
     path = _to_pending_verify(tmp_path, task_id="g-mismatch")
     task = load_task(path)
+    task = set_artifact_commit(task, commit="c0ffee00", actor="developer", role="developer")
     task = record_check(
         task,
         acceptance_id="A1",
         executed=True,
         exit_code=0,
         bound_commit="deadbeef",
-        artifact_commit="c0ffee00",
         result="pass",
+        actor="verifier",
+        role="verifier",
     )
     errors = evaluate_verify_gate(task)
     assert errors
@@ -156,14 +146,16 @@ def test_commit_mismatch_fails(tmp_path: Path):
 def test_exit_code_nonzero_fails(tmp_path: Path):
     path = _to_pending_verify(tmp_path, task_id="g-exit")
     task = load_task(path)
+    task = set_artifact_commit(task, commit="deadbeef", actor="developer", role="developer")
     task = record_check(
         task,
         acceptance_id="A1",
         executed=True,
         exit_code=1,
         bound_commit="deadbeef",
-        artifact_commit="deadbeef",
         result="pass",
+        actor="verifier",
+        role="verifier",
     )
     errors = evaluate_verify_gate(task)
     assert errors
@@ -174,14 +166,16 @@ def test_matching_commits_and_exit_zero_pass(tmp_path: Path):
     path = _to_pending_verify(tmp_path, task_id="g-ok")
     task = load_task(path)
     full = "abcdef0123456789abcdef0123456789abcdef01"
+    task = set_artifact_commit(task, commit="abcdef0", actor="developer", role="developer")
     task = record_check(
         task,
         acceptance_id="A1",
         executed=True,
         exit_code=0,
         bound_commit=full,
-        artifact_commit="abcdef0",
         result="pass",
+        actor="verifier",
+        role="verifier",
     )
     assert evaluate_verify_gate(task) == []
 
@@ -189,15 +183,7 @@ def test_matching_commits_and_exit_zero_pass(tmp_path: Path):
 def test_check_result_fail_blocks(tmp_path: Path):
     path = _to_pending_verify(tmp_path, task_id="g-cres")
     task = load_task(path)
-    task = record_check(
-        task,
-        acceptance_id="A1",
-        executed=True,
-        exit_code=0,
-        bound_commit="deadbeef",
-        artifact_commit="deadbeef",
-        result="pass",
-    )
+    task = seed_trusted_pass(task, commit="deadbeef")
     # Inject check-level result=fail
     checks = task["verification"]["checks"]
     checks[0]["result"] = "fail"

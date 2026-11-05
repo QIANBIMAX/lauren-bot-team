@@ -32,7 +32,8 @@ kit lesson-add --task-id "$TASK_ID" --root "$ROOT" \
   --summary "空 query 必须返回 []" \
   --rule-file "$RULE_DRAFT" \
   --rule-path "lauren-team-kit/rules/demo-c8-guard.md" \
-  --tag smoke --actor developer
+  --tag smoke --actor developer \
+  --applies-to filter --probe-ref demo-c8-empty-probe --probe "空 query → []"
 
 # 未审核不得发布
 set +e
@@ -42,8 +43,10 @@ set -e
 [[ $rc -ne 0 ]] || { log "ERROR: publish before review should fail"; exit 1; }
 log "(publish-before-review failed as expected)"
 
+PROBE_JSON='{"probe_id":"demo-c8-empty-probe","passed":true,"stdout_summary":"[]","evidence":"checks/c8-empty.log","at":"2026-11-05T11:00:00+08:00"}'
 kit lesson-review --task-id "$TASK_ID" --root "$ROOT" \
-  --id "$LESSON_ID" --verdict approve --actor verifier --notes "有效且不误伤"
+  --id "$LESSON_ID" --verdict approve --actor verifier --notes "有效且不误伤" \
+  --probe-result-json "$PROBE_JSON"
 
 kit lesson-publish --task-id "$TASK_ID" --root "$ROOT" --id "$LESSON_ID" --actor chief
 
@@ -65,6 +68,9 @@ doc = json.loads(store.read_text(encoding="utf-8"))
 assert doc["id"] == lid
 assert "空 query" in (doc.get("summary") or "")
 assert doc.get("rule_body") or (root / doc["rule_path"]).is_file()
+assert doc.get("rules_version") and doc.get("content_hash")
+assert doc["rules_version"] == doc.get("version")
+assert doc["rules_version"] in (root / doc["rule_path"]).read_text(encoding="utf-8")
 rule = root / doc["rule_path"]
 assert rule.is_file(), rule
 # history has candidate/review/publish

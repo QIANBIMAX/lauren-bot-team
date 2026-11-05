@@ -431,7 +431,7 @@
     "team": {
       "type": "object",
       "additionalProperties": false,
-      "description": "Team optional link: child task under a team run",
+      "description": "Team optional link: child task under a team run. Allowed keys: team_id, role, assignee, assigned_by, assigned_at. Do NOT put parent_task_id here.",
       "properties": {
         "team_id": {
           "type": "string",
@@ -457,7 +457,7 @@
     },
     "parent_task_id": {
       "type": "string",
-      "description": "Optional parent task id for hierarchy; Team children usually omit and use team.team_id"
+      "description": "Optional TOP-LEVEL parent task id for hierarchy (e.g. Eng handoff to developer). MUST NOT be nested under team (team.additionalProperties=false). Distinct from team.team_id."
     }
   },
   "allOf": [

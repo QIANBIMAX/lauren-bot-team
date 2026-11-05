@@ -11,9 +11,9 @@
 Lite 与 Team 是 **平行、对等的两套 Import 材料**，互不依赖、也不互为「旁路」。挑一条导入即可；**Full（完整工程线）是未来第三条产品线**，本期未交付。
 
 - Lite：独立导入 3 个角色；**三角直派闭环**（幕僚长 → 云端编程助手 → 验证助手）。
-- Team：独立导入 7 个角色（三角 + Nancy私人助理 + 工程主管Matcha + 工程bot①②）；**按复杂度分流**——简单同 Lite 直派；复杂强制 幕僚长→Matcha→工程bot→云端编程助手→验证助手。无需先导入 Lite。
+- Team：独立导入 7 个角色（三角 + Nancy私人助理 + 工程主管Matcha + 工程bot①②）；**默认 `engineering_chain`**（幕僚长→Matcha→Eng→developer→验证助手）；**可选 `fast_path`**（默认关）。口径：原图核心链 + 可选捷径。无需先导入 Lite。
 - 两条线共用 `lauren-team-kit` 与 Demo。这是共享运行依赖，不是部署先后依赖。更换产品线请勿直接叠加导入，以免重复创建基础角色；已有任务和证据应先保留。
-- 工程bot①②本期做**子任务拆解并转交 developer**（不做业务实现）；GUI 导入和三平台尚未完成验收；独立部署包装不代表 Full Eng 已交付。
+- 工程bot①②做**子任务拆解并转交 developer**（Team/Full 均**永不写业务代码**；③④未建）；GUI 导入和三平台尚未完成验收；真 OMB 多助手委派属 T2 预留（勿冒充已通）。
 
 | 产品线 | 适合谁 | BotMRR（优先） | 兼容旧格式 |
 |---|---|---|---|
@@ -56,10 +56,10 @@ Lite 与 Team 是 **平行、对等的两套 Import 材料**，互不依赖、�
 
 | 显示名 | key | 干什么 |
 |---|---|---|
-| **幕僚长**（Team 下） | `chief` | **按复杂度分流** + **减负协议**：简单直派云端编程助手；复杂硬禁直派须交 Matcha；闲杂进度/阻塞转 Nancy |
-| **Nancy私人助理** | `nancy` | 图：Nancy 私人助理 · Coordinator。进度整本 / 待办 / 阻塞汇总；减负接单；routines 默认暂停；**硬禁验证、硬禁代码、不擅自开定时** |
+| **幕僚长**（Team 下） | `chief` | **默认 engineering_chain** + **减负协议**：硬禁默认直派；可选 fast_path（默认关须记因）；闲杂进度/阻塞转 Nancy |
+| **Nancy私人助理** | `nancy` | 图：Nancy 私人助理 · Coordinator。进度整本 / 待办 / 阻塞汇总；减负接单；本包 routines:[] 未预置例程；**硬禁验证、硬禁代码、不擅自开定时** |
 | **工程主管Matcha** | `matcha` | 图：工程主管 Matcha · Eng Lead。只接复杂工程；排任务指派 Eng；**不写验证、不写业务代码** |
-| **工程bot①** / **工程bot②** | `eng-a` / `eng-b` | 图：工程 bot ①②。**拆解子任务 → 转交云端编程助手**（本期不做业务实现）；**不是** Full Eng ①–④（③④先不建） |
+| **工程bot①** / **工程bot②** | `eng-a` / `eng-b` | 图：工程 bot ①②。**拆解子任务 → 转交云端编程助手**（永不写业务代码）；③④先不建；不是「四个写码 Eng」 |
 
 材料：[`lauren-omb-pack/team/`](lauren-omb-pack/team/) · 说明：[`docs/team.md`](docs/team.md)。
 
@@ -92,5 +92,5 @@ Lite 与 Team 是 **平行、对等的两套 Import 材料**，互不依赖、�
 
 - OMB GUI 正式导入 / 委派 / 重启恢复的真机验收
 - Windows / Linux
-- **Full** 产品线（四个完整写码 Eng / 完整管理面）；Team ①②本期拆解转交、不做业务实现；③④未建
+- **Full** 产品线（完整管理面 + Eng③④ 等；Eng 在 Team/Full **均永不写业务代码**，只协调/拆解转交）；Team ①②已是拆解转交中间层；③④未建
 - demo-c4 在 Demo 集成分支上的真实合并（需先 `init-integration`）

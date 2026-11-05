@@ -6,6 +6,8 @@
 
 ## 安装
 
+若仓库内 `.venv` 因路径改名变成空壳，重建即可（不必修跨卷 shebang）：
+
 ```bash
 cd lauren-team-kit
 python3 -m venv .venv

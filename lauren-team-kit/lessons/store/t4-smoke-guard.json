@@ -1,0 +1,47 @@
+{
+  "id": "t4-smoke-guard",
+  "summary": "空输入必须 []",
+  "source_task": "demo-t4-lesson",
+  "rule_path": "lauren-team-kit/rules/t4-smoke-guard.md",
+  "store_path": "lauren-team-kit/lessons/store/t4-smoke-guard.json",
+  "published_at": "2026-11-05T11:21:39+08:00",
+  "published_by": "chief",
+  "reviewed_by": "verifier",
+  "tags": [],
+  "scope": {
+    "task_kind": "filter"
+  },
+  "applies_to": {
+    "task_kind": "filter"
+  },
+  "probe": {
+    "ref": "t4-smoke-probe",
+    "description": "empty→[]"
+  },
+  "probe_ref": "t4-smoke-probe",
+  "probe_result": {
+    "probe_id": "t4-smoke-probe",
+    "passed": true,
+    "at": "2026-11-05T11:00:00+08:00",
+    "evidence": "checks/t4.log",
+    "stdout_summary": "[]"
+  },
+  "rules_version": "1-7ea0a35193d53f7f",
+  "content_hash": "7ea0a35193d53f7fd2747f0ce8fa6d3b16ed79af9ebd4914deb9ac1df6286b07",
+  "version": "1-7ea0a35193d53f7f",
+  "rule_body": "# t4-smoke-guard\n空输入必须返回 []。\n",
+  "candidate_snapshot": {
+    "proposed_by": "developer",
+    "proposed_at": "2026-11-05T11:21:39+08:00",
+    "review_notes": "probe ok",
+    "status": "approved",
+    "scope": {
+      "task_kind": "filter"
+    },
+    "probe": {
+      "ref": "t4-smoke-probe",
+      "description": "empty→[]"
+    },
+    "probe_ref": "t4-smoke-probe"
+  }
+}

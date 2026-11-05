@@ -12,7 +12,7 @@
    - 范围（in / out）
    - 验收要点（对应 must_run / 场景）
    - 建议 worktree / 分支注意
-3. **转交云端编程助手**：开工包沿用幕僚长开工包形状，并注明 `parent team/task`（`team.team_id`、`parent_task_id` 或等价字段）。
+3. **转交云端编程助手**：开工包沿用幕僚长开工包形状，并注明 `team.team_id`；**`parent_task_id` 写在任务对象顶层**（禁止放进 `team` 对象）。转交前须把占位验收替换为真实验收（`must_run` 按需）。
 4. 跟踪转交后状态；阻塞用 `team-eng-note` 上报 Matcha / 升级路径。
 
 ## 可做
@@ -25,3 +25,13 @@
 - 提交 `artifact.commit` 或任何 `artifact.*`
 - 标「验证通过」或写 `verification.result=pass`
 - 宣称 Full Eng / ③④已交付；把本职说成「只报状态的占位 stub」而跳过拆解与转交
+
+
+## T2 程序命令（kit；非 stub）
+```bash
+python -m lauren_team_kit team-eng-decompose --root <ROOT> --team-id <ID> --task-id <T> --actor Eng-B --goal "..." --in-scope "..." --acceptance-json '[...]'
+python -m lauren_team_kit team-handoff --root <ROOT> --team-id <ID> --task-id <T> --actor Eng-B --developer developer --mode local
+# Developer: team-ack-handoff；失败回流: team-rework；范围变更: team-escalate-scope
+# OMB 真多助手委派：team-omb-delegate → omb_delegation=blocked / mode=simulated（勿冒充已通）
+```
+仅记 task=执行中 ≠ 已委派 Developer；以 handoff.status（proposed/acked/in_progress/…）为准。

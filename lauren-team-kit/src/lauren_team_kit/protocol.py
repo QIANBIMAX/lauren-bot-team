@@ -3,11 +3,21 @@
 from __future__ import annotations
 
 import json
+import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 from lauren_team_kit import SCHEMA_VERSION
+from lauren_team_kit.atomic_io import atomic_write_json
+from lauren_team_kit.authz import (
+    AuthzError,
+    Principal,
+    authorize_record_check,
+    authorize_set_artifact,
+    authorize_transition,
+    resolve_principal,
+)
 from lauren_team_kit.evidence import ensure_evidence_dir, evidence_relpath
 from lauren_team_kit.state_machine import (
     ALL_STATUSES,
@@ -77,11 +87,8 @@ def load_task(path: Path | str) -> dict[str, Any]:
 
 
 def save_task(path: Path | str, task: dict[str, Any]) -> None:
-    p = Path(path)
-    p.parent.mkdir(parents=True, exist_ok=True)
-    with p.open("w", encoding="utf-8") as f:
-        json.dump(task, f, ensure_ascii=False, indent=2)
-        f.write("\n")
+    """Atomically write task JSON (temp + replace) under a per-file lock."""
+    atomic_write_json(path, task)
 
 
 def structural_validate(task: dict[str, Any]) -> list[str]:
@@ -280,7 +287,55 @@ def transition_task(
     to_status: str,
     actor: str,
     note: str | None = None,
+    role: str | None = None,
+    profile: str | None = None,
+    principal: Principal | None = None,
+    trust_level: str | None = None,
+    skip_authz: bool = False,
+    root: Path | str | None = None,
+    skip_route_guard: bool = False,
 ) -> dict[str, Any]:
+    """Apply a legal status transition after role authorization (T1).
+
+    skip_authz is reserved for kit-internal repair paths; callers must not use it
+    to bypass Nancy/Eng boundaries from CLI.
+    Under Team engineering_chain, entering 执行中 as developer (or chief driving
+    developer execute) requires an acked handoff (T2).
+    """
+    if not skip_authz:
+        prin = resolve_principal(
+            actor=actor,
+            role=role,
+            profile=profile,
+            trust_level=trust_level,  # type: ignore[arg-type]
+            principal=principal,
+        )
+        authorize_transition(prin, to_status)
+        actor_name = prin.actor
+        role_name = prin.role
+    else:
+        actor_name = actor
+        role_name = role or "system"
+        prin = None
+
+    # T2 route guard: true developer execution under engineering_chain
+    if (
+        not skip_authz
+        and not skip_route_guard
+        and to_status == "执行中"
+        and role_name in ("developer", "chief")
+    ):
+        from lauren_team_kit.handoff import route_guard_check
+
+        op = "developer_execute" if role_name == "chief" else "enter_executing"
+        route_guard_check(
+            task,
+            root=root,
+            actor=actor_name,
+            role=role_name,
+            op=op,
+        )
+
     from_status = task.get("status", "")
     try:
         apply_transition(str(from_status), to_status)
@@ -291,7 +346,8 @@ def transition_task(
     now = _now_iso()
     entry: dict[str, Any] = {
         "at": now,
-        "actor": actor,
+        "actor": actor_name,
+        "role": role_name,
         "from": from_status,
         "to": to_status,
     }
@@ -307,6 +363,63 @@ def transition_task(
 
 
 
+def set_artifact_commit(
+    task: dict[str, Any],
+    *,
+    commit: str,
+    actor: str = "developer",
+    role: str | None = "developer",
+    profile: str | None = None,
+    principal: Principal | None = None,
+    root: Path | str | None = None,
+    skip_route_guard: bool = False,
+) -> dict[str, Any]:
+    """Developer writes artifact.commit (never combined with trusted verify).
+
+    Under Team engineering_chain, chief cannot bypass Matcha/Eng; developer
+    needs an acked handoff (T2 route_guard). Pass skip_route_guard only for
+    kit-internal repair.
+    """
+    prin = resolve_principal(
+        actor=actor, role=role, profile=profile, principal=principal
+    )
+    authorize_set_artifact(prin)
+    if not skip_route_guard:
+        from lauren_team_kit.handoff import route_guard_check
+
+        route_guard_check(
+            task,
+            root=root,
+            actor=prin.actor,
+            role=prin.role,
+            op="set_artifact",
+        )
+    if not isinstance(commit, str) or not commit.strip():
+        raise AuthzError("artifact.commit 必须为非空字符串")
+    task = dict(task)
+    now = _now_iso()
+    artifact = dict(task.get("artifact") or {})
+    artifact["commit"] = commit.strip()
+    artifact["set_by"] = prin.actor
+    artifact["set_role"] = prin.role
+    artifact["set_at"] = now
+    task["artifact"] = artifact
+    task["updated_at"] = now
+    hist = list(task.get("history") or [])
+    hist.append(
+        {
+            "at": now,
+            "actor": prin.actor,
+            "role": prin.role,
+            "from": task.get("status"),
+            "to": task.get("status"),
+            "note": f"set_artifact:{commit.strip()[:12]}",
+        }
+    )
+    task["history"] = hist
+    return task
+
+
 def record_check(
     task: dict[str, Any],
     *,
@@ -318,25 +431,110 @@ def record_check(
     result: str | None = None,
     log_path: str | None = None,
     notes: str | None = None,
+    actor: str | None = None,
+    role: str | None = None,
+    profile: str | None = None,
+    principal: Principal | None = None,
+    trust_level: str | None = None,
+    diagnostic: bool = False,
+    new_round: bool = True,
 ) -> dict[str, Any]:
-    """Upsert verification.checks + optional result/commits so verify-gate can pass."""
+    """Upsert verification.checks with trust + round binding (T1).
+
+    Trusted automatic acceptance requires verifier channel; otherwise the entry
+    is stamped diagnostic/imported_evidence and verify-gate ignores it.
+    Writing artifact_commit here together with trusted pass fields is refused —
+    use set_artifact_commit as developer first.
+    """
+    if principal is None and actor is None:
+        raise AuthzError(
+            "record_check 需要 actor 或 principal；"
+            "非 verifier 请传 diagnostic=True（不计入自动验收）"
+        )
+    prin = resolve_principal(
+        actor=actor,
+        role=role,
+        profile=profile,
+        trust_level=("diagnostic" if diagnostic else trust_level),  # type: ignore[arg-type]
+        principal=principal,
+    )
+
+    wants_artifact = artifact_commit is not None
+    # Aiming at gate / authoritative verification fields
+    wants_trusted_pass = (not diagnostic) and (
+        result in ("pass", "fail", "inconclusive")
+        or executed is True
+        or bound_commit is not None
+    )
+
+    trust_stamp = authorize_record_check(
+        prin,
+        diagnostic=diagnostic or prin.trust_level == "diagnostic",
+        wants_trusted_pass=wants_trusted_pass,
+        wants_artifact=wants_artifact,
+    )
+
+    if wants_artifact and trust_stamp == "verified_run":
+        raise AuthzError(
+            "可信 record_check 不得同时写 artifact.commit；先 set_artifact_commit"
+        )
+    if wants_artifact:
+        authorize_set_artifact(prin)
+
     task = dict(task)
     now = _now_iso()
     verification = dict(task.get("verification") or {})
-    checks = list(verification.get("checks") or [])
-    found = False
+
+    if trust_stamp == "verified_run":
+        if new_round or not verification.get("round_id"):
+            round_id = str(uuid.uuid4())
+            verification["round_id"] = round_id
+        else:
+            round_id = str(verification.get("round_id"))
+        # Drop prior-round trusted checks from the active list (keep diagnostic history)
+        prior = list(verification.get("checks") or [])
+        archived = list(verification.get("archived_checks") or [])
+        keep: list[Any] = []
+        for c in prior:
+            if not isinstance(c, dict):
+                continue
+            if c.get("trust") == "verified_run" and c.get("round_id") != round_id:
+                archived.append(c)
+            else:
+                keep.append(c)
+        verification["archived_checks"] = archived
+        checks = keep
+    else:
+        round_id = verification.get("round_id")
+        checks = list(verification.get("checks") or [])
+
     entry: dict[str, Any] = {
         "acceptance_id": acceptance_id,
         "executed": executed,
+        "trust": trust_stamp,
+        "recorded_by": prin.actor,
+        "recorded_role": prin.role,
     }
+    if round_id:
+        entry["round_id"] = round_id
     if exit_code is not None:
         entry["exit_code"] = exit_code
     if log_path:
         entry["log_path"] = log_path
     if notes:
         entry["notes"] = notes
+    if trust_stamp != "verified_run":
+        entry["notes"] = (
+            (notes + " | " if notes else "")
+            + f"[{trust_stamp}; not counted by verify-gate]"
+        )
+
+    found = False
     for i, c in enumerate(checks):
         if isinstance(c, dict) and c.get("acceptance_id") == acceptance_id:
+            # Replace same acceptance in current round / diagnostic upsert
+            if trust_stamp == "verified_run" and c.get("round_id") not in (None, round_id):
+                continue
             merged = dict(c)
             merged.update(entry)
             checks[i] = merged
@@ -346,15 +544,35 @@ def record_check(
         checks.append(entry)
     verification["checks"] = checks
     verification["ran_at"] = now
-    if result is not None:
-        verification["result"] = result
-    if bound_commit is not None:
-        verification["bound_commit"] = bound_commit
+
+    if trust_stamp == "verified_run":
+        if result is not None:
+            verification["result"] = result
+        if bound_commit is not None:
+            verification["bound_commit"] = bound_commit
+        verification["trust"] = "verified_run"
+        verification["verifier"] = prin.actor
+    else:
+        # Diagnostic must not elevate overall result to pass for the gate
+        if result is not None and result != "pass":
+            verification["result"] = result
+        elif result == "pass":
+            # Keep a side field; authoritative result unchanged unless already set
+            verification["diagnostic_result"] = "pass"
+            # Do not set verification.result=pass from diagnostic
+        if bound_commit is not None and trust_stamp != "verified_run":
+            verification["diagnostic_bound_commit"] = bound_commit
+
     task["verification"] = verification
 
-    if artifact_commit is not None:
+    if artifact_commit is not None and trust_stamp != "verified_run":
+        # Allowed only for developer diagnostic path that isn't trusted verify —
+        # still refuse nancy etc. via authorize_set_artifact above.
         artifact = dict(task.get("artifact") or {})
         artifact["commit"] = artifact_commit
+        artifact["set_by"] = prin.actor
+        artifact["set_role"] = prin.role
+        artifact["trust"] = "untrusted_via_record_check"
         task["artifact"] = artifact
 
     task["updated_at"] = now

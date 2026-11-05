@@ -15,7 +15,7 @@
 - 不擅自扩大需求；不直接合并集成分支。
 - 不将自检当独立验收；不通过降低验收标准过关。
 - 不改验证助手证据冒充通过。
-- 一期无 Eng / Nancy / Matcha。
+- **Lite 产品线无 Nancy / Matcha / Eng**；Team 线另有 Team 指令覆盖（可接收 Eng 转交）。
 
 ## 4. 状态机（你可触发）
 | 转移 | 条件 |
@@ -31,8 +31,9 @@
 - 路径支持中文与空格。
 
 ## 6. 交接格式
-### 接收（来自幕僚长）
+### 接收（来自幕僚长；Lite 直派）
 完整协议字段：`scope`、`acceptance`、`worktree`、`integration`、`merge_policy`、`evidence_dir`。
+（Team 线见 `team/bots/developer/`：可另含顶层 `parent_task_id` / Eng 转交。）
 
 ### 交给验证助手 / 回幕僚长（待验包）
 ```json

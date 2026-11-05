@@ -10,12 +10,14 @@ from typing import Any
 
 from lauren_team_kit import __version__
 from lauren_team_kit.evidence import ensure_evidence_dir
+from lauren_team_kit.authz import AuthzError
 from lauren_team_kit.protocol import (
     create_task,
     load_task,
     record_check,
     resolve_task_file,
     save_task,
+    set_artifact_commit,
     transition_task,
     validate_task,
 )
@@ -35,9 +37,13 @@ from lauren_team_kit.budget import (
 from lauren_team_kit.lessons import (
     LessonError,
     add_candidate,
+    evaluate_recurrence,
     list_store,
     load_from_store,
     publish_candidate,
+    record_recurrence,
+    record_rule_load,
+    record_rule_receive,
     review_candidate,
 )
 from lauren_team_kit.state_machine import IllegalTransitionError, allowed_targets
@@ -53,12 +59,29 @@ from lauren_team_kit.verify_gate import VerifyGateError, gate_report
 from lauren_team_kit.team import (
     TeamError,
     add_child_task,
+    add_team_todo,
     assign_task,
+    complete_team_todo,
     create_team,
     eng_status_note,
+    list_team_todos,
+    load_team,
+    resolve_team_blocker,
+    save_team,
+    set_task_dependencies,
     summarize_team,
     team_path_for,
     team_status,
+)
+from lauren_team_kit.handoff import (
+    ack_handoff,
+    eng_decompose,
+    eng_handoff_developer,
+    escalate_scope_change,
+    mark_handoff_status,
+    omb_delegate,
+    record_local_developer_commit,
+    start_rework,
 )
 
 
@@ -83,6 +106,21 @@ def _resolve_or_exit(args: argparse.Namespace) -> Path | int:
         return 2
     return path
 
+
+
+def _root_from_args(args: argparse.Namespace, task_path: Path | None = None) -> Path | None:
+    """Prefer --root; else infer from .../workspace/runs/<id>/task.json."""
+    r = getattr(args, "root", None)
+    if r:
+        return Path(r).resolve()
+    if task_path is not None:
+        # task.json → task_id → runs → workspace → root
+        try:
+            if task_path.name == "task.json" and task_path.parents[2].name == "workspace":
+                return task_path.parents[3]
+        except IndexError:
+            return None
+    return None
 
 def cmd_create(args: argparse.Namespace) -> int:
     if not args.root:
@@ -127,6 +165,9 @@ def cmd_transition(args: argparse.Namespace) -> int:
             actor=args.actor,
             note=args.note,
             auto_block=auto_block,
+            role=getattr(args, "role", None),
+            profile=getattr(args, "profile", None),
+            root=_root_from_args(args, path),
         )
     except IllegalTransitionError as e:
         print(str(e), file=sys.stderr)
@@ -135,6 +176,9 @@ def cmd_transition(args: argparse.Namespace) -> int:
         print(str(e), file=sys.stderr)
         return 1
     except BudgetError as e:
+        print(str(e), file=sys.stderr)
+        return 1
+    except AuthzError as e:
         print(str(e), file=sys.stderr)
         return 1
     save_task(path, updated)
@@ -478,22 +522,70 @@ def cmd_record_check(args: argparse.Namespace) -> int:
         print(f"找不到 task: {path}", file=sys.stderr)
         return 1
     task = load_task(path)
-    updated = record_check(
-        task,
-        acceptance_id=args.acceptance_id,
-        executed=args.executed,
-        exit_code=args.exit_code,
-        bound_commit=args.bound_commit,
-        artifact_commit=args.artifact_commit,
-        result=args.result,
-        log_path=args.log_path,
-        notes=args.notes,
-    )
+    diagnostic = bool(getattr(args, "diagnostic", False))
+    try:
+        # Optional: developer sets artifact first when --artifact-commit given
+        # together with trusted verify — refused inside record_check; split here
+        # if actor is verifier and artifact provided without --allow-combined (never).
+        art = args.artifact_commit
+        if art and not diagnostic:
+            # Prefer explicit split: set artifact as developer then record as verifier
+            # Only if --set-artifact-as developer role is used; else let record_check refuse.
+            pass
+        updated = record_check(
+            task,
+            acceptance_id=args.acceptance_id,
+            executed=args.executed,
+            exit_code=args.exit_code,
+            bound_commit=args.bound_commit,
+            artifact_commit=args.artifact_commit,
+            result=args.result,
+            log_path=args.log_path,
+            notes=args.notes,
+            actor=args.actor,
+            role=getattr(args, "role", None),
+            profile=getattr(args, "profile", None),
+            diagnostic=diagnostic,
+        )
+    except AuthzError as e:
+        print(str(e), file=sys.stderr)
+        return 1
     save_task(path, updated)
+    ver = updated.get("verification") or {}
+    trust = None
+    checks = ver.get("checks") or []
+    if checks:
+        trust = checks[-1].get("trust")
     print(
         f"recorded check acceptance_id={args.acceptance_id} "
-        f"executed={args.executed} result={updated.get('verification', {}).get('result')}"
+        f"executed={args.executed} result={ver.get('result')} "
+        f"trust={trust} round_id={ver.get('round_id')}"
     )
+    return 0
+
+
+def cmd_set_artifact(args: argparse.Namespace) -> int:
+    path = _resolve_or_exit(args)
+    if isinstance(path, int):
+        return path
+    if not path.is_file():
+        print(f"找不到 task: {path}", file=sys.stderr)
+        return 1
+    task = load_task(path)
+    try:
+        updated = set_artifact_commit(
+            task,
+            commit=args.commit,
+            actor=args.actor,
+            role=getattr(args, "role", None) or "developer",
+            profile=getattr(args, "profile", None),
+            root=_root_from_args(args, path),
+        )
+    except AuthzError as e:
+        print(str(e), file=sys.stderr)
+        return 1
+    save_task(path, updated)
+    print(f"set-artifact {path}: commit={args.commit}")
     return 0
 
 
@@ -580,6 +672,24 @@ def cmd_lesson_add(args: argparse.Namespace) -> int:
         rule_body = Path(args.rule_file).read_text(encoding="utf-8")
     elif args.rule_body is not None:
         rule_body = args.rule_body
+    scope = None
+    if getattr(args, "scope_json", None):
+        try:
+            scope = json.loads(args.scope_json)
+        except json.JSONDecodeError as e:
+            print(f"--scope-json 无效: {e}", file=sys.stderr)
+            return 2
+    elif getattr(args, "applies_to", None):
+        scope = args.applies_to
+    probe = None
+    if getattr(args, "probe_json", None):
+        try:
+            probe = json.loads(args.probe_json)
+        except json.JSONDecodeError as e:
+            print(f"--probe-json 无效: {e}", file=sys.stderr)
+            return 2
+    elif getattr(args, "probe", None):
+        probe = args.probe
     try:
         updated = add_candidate(
             task,
@@ -589,6 +699,10 @@ def cmd_lesson_add(args: argparse.Namespace) -> int:
             rule_body=rule_body,
             proposed_rule_path=args.rule_path,
             tags=args.tag,
+            scope=scope,
+            applies_to=getattr(args, "applies_to", None),
+            probe=probe,
+            probe_ref=getattr(args, "probe_ref", None),
         )
     except LessonError as e:
         print(str(e), file=sys.stderr)
@@ -612,6 +726,20 @@ def cmd_lesson_review(args: argparse.Namespace) -> int:
         return 1
     task = load_task(path)
     approved = args.verdict == "approve"
+    probe_result = None
+    evidence = None
+    if getattr(args, "probe_result_json", None):
+        try:
+            probe_result = json.loads(args.probe_result_json)
+        except json.JSONDecodeError as e:
+            print(f"--probe-result-json 无效: {e}", file=sys.stderr)
+            return 2
+    if getattr(args, "evidence_json", None):
+        try:
+            evidence = json.loads(args.evidence_json)
+        except json.JSONDecodeError as e:
+            print(f"--evidence-json 无效: {e}", file=sys.stderr)
+            return 2
     try:
         updated = review_candidate(
             task,
@@ -619,6 +747,8 @@ def cmd_lesson_review(args: argparse.Namespace) -> int:
             approved=approved,
             actor=args.actor,
             notes=args.notes,
+            probe_result=probe_result,
+            evidence=evidence,
         )
     except LessonError as e:
         print(str(e), file=sys.stderr)
@@ -699,6 +829,156 @@ def cmd_lesson_show(args: argparse.Namespace) -> int:
 
 
 
+def cmd_lesson_rule_load(args: argparse.Namespace) -> int:
+    """Eng 开发包加载回执：写入 team 或 task 的 rule_receipts。"""
+    if args.team_id:
+        if not args.root:
+            print("lesson-rule-load --team-id 需要 --root", file=sys.stderr)
+            return 2
+        tpath = team_path_for(args.root, args.team_id)
+        if not tpath.is_file():
+            print(f"找不到 team: {tpath}", file=sys.stderr)
+            return 1
+        host = load_team(tpath)
+        try:
+            updated = record_rule_load(
+                host,
+                eng=args.eng,
+                lesson_id=args.id,
+                rules_version=args.rules_version,
+                actor=args.actor,
+            )
+        except LessonError as e:
+            print(str(e), file=sys.stderr)
+            return 1
+        save_team(tpath, updated)
+        print(json.dumps({
+            "action": "lesson_rule_load",
+            "host": "team",
+            "team_id": args.team_id,
+            "receipts": updated.get("rule_receipts"),
+        }, ensure_ascii=False, indent=2))
+        return 0
+    path = _resolve_or_exit(args)
+    if isinstance(path, int):
+        return path
+    if not path.is_file():
+        print(f"找不到 task: {path}", file=sys.stderr)
+        return 1
+    task = load_task(path)
+    try:
+        updated = record_rule_load(
+            task,
+            eng=args.eng,
+            lesson_id=args.id,
+            rules_version=args.rules_version,
+            actor=args.actor,
+        )
+    except LessonError as e:
+        print(str(e), file=sys.stderr)
+        return 1
+    save_task(path, updated)
+    print(json.dumps({
+        "action": "lesson_rule_load",
+        "host": "task",
+        "task_id": updated.get("task_id"),
+        "receipts": updated.get("rule_receipts"),
+    }, ensure_ascii=False, indent=2))
+    return 0
+
+
+def cmd_lesson_rule_receive(args: argparse.Namespace) -> int:
+    """Developer 接收回执。"""
+    if args.team_id:
+        if not args.root:
+            print("lesson-rule-receive --team-id 需要 --root", file=sys.stderr)
+            return 2
+        tpath = team_path_for(args.root, args.team_id)
+        if not tpath.is_file():
+            print(f"找不到 team: {tpath}", file=sys.stderr)
+            return 1
+        host = load_team(tpath)
+        try:
+            updated = record_rule_receive(
+                host,
+                developer=args.developer,
+                lesson_id=args.id,
+                rules_version=args.rules_version,
+                actor=args.actor,
+                handoff_id=args.handoff_id,
+            )
+        except LessonError as e:
+            print(str(e), file=sys.stderr)
+            return 1
+        save_team(tpath, updated)
+        print(json.dumps({
+            "action": "lesson_rule_receive",
+            "host": "team",
+            "team_id": args.team_id,
+            "receipts": updated.get("rule_receipts"),
+        }, ensure_ascii=False, indent=2))
+        return 0
+    path = _resolve_or_exit(args)
+    if isinstance(path, int):
+        return path
+    if not path.is_file():
+        print(f"找不到 task: {path}", file=sys.stderr)
+        return 1
+    task = load_task(path)
+    try:
+        updated = record_rule_receive(
+            task,
+            developer=args.developer,
+            lesson_id=args.id,
+            rules_version=args.rules_version,
+            actor=args.actor,
+            handoff_id=args.handoff_id,
+        )
+    except LessonError as e:
+        print(str(e), file=sys.stderr)
+        return 1
+    save_task(path, updated)
+    print(json.dumps({
+        "action": "lesson_rule_receive",
+        "host": "task",
+        "task_id": updated.get("task_id"),
+        "receipts": updated.get("rule_receipts"),
+    }, ensure_ascii=False, indent=2))
+    return 0
+
+
+def cmd_lesson_recurrence(args: argparse.Namespace) -> int:
+    """对已发布经验跑/记防复发探针结果。"""
+    if not args.root:
+        print("lesson-recurrence 需要 --root", file=sys.stderr)
+        return 2
+    try:
+        probe_result = json.loads(args.probe_result_json)
+    except json.JSONDecodeError as e:
+        print(f"--probe-result-json 无效: {e}", file=sys.stderr)
+        return 2
+    try:
+        result = evaluate_recurrence(args.root, args.id, probe_result=probe_result)
+    except LessonError as e:
+        print(str(e), file=sys.stderr)
+        return 1
+    # optional persist on task/team
+    if args.team_id:
+        tpath = team_path_for(args.root, args.team_id)
+        host = load_team(tpath)
+        host = record_recurrence(host, result, actor=args.actor)
+        save_team(tpath, host)
+    elif args.task_id or args.task_file:
+        path = _resolve_or_exit(args)
+        if isinstance(path, int):
+            return path
+        task = load_task(path)
+        task = record_recurrence(task, result, actor=args.actor)
+        save_task(path, task)
+    print(json.dumps({"action": "lesson_recurrence", "result": result}, ensure_ascii=False, indent=2))
+    return 0 if result.get("recurrence_blocked") or result.get("probe_passed") else 0
+
+
 def cmd_team_create(args: argparse.Namespace) -> int:
     try:
         team = create_team(
@@ -728,6 +1008,7 @@ def cmd_team_add_task(args: argparse.Namespace) -> int:
             role=args.role,
             requester=args.actor,
             force=args.force,
+            parent_task_id=args.parent_task_id,
         )
     except TeamError as e:
         print(str(e), file=sys.stderr)
@@ -751,6 +1032,7 @@ def cmd_team_assign(args: argparse.Namespace) -> int:
             assignee_role=args.assignee_role,
             by=args.actor,
             note=args.note,
+            depends_on=getattr(args, "depends_on", None) or None,
         )
     except TeamError as e:
         print(str(e), file=sys.stderr)
@@ -796,6 +1078,79 @@ def cmd_team_status(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_team_todo_add(args: argparse.Namespace) -> int:
+    try:
+        entry = add_team_todo(
+            root=args.root,
+            team_id=args.team_id,
+            text=args.text,
+            by=args.actor,
+            source=args.source,
+            owner=args.owner,
+            linked_task_id=args.linked_task_id,
+            todo_id=args.todo_id,
+        )
+    except TeamError as e:
+        print(str(e), file=sys.stderr)
+        return 1
+    print(json.dumps(entry, ensure_ascii=False))
+    return 0
+
+
+def cmd_team_todo_done(args: argparse.Namespace) -> int:
+    try:
+        entry = complete_team_todo(
+            root=args.root,
+            team_id=args.team_id,
+            todo_id=args.todo_id,
+            by=args.actor,
+            done_basis=args.done_basis,
+            evidence=args.evidence,
+            status=args.status,
+        )
+    except TeamError as e:
+        print(str(e), file=sys.stderr)
+        return 1
+    print(json.dumps(entry, ensure_ascii=False))
+    return 0
+
+
+def cmd_team_todo_list(args: argparse.Namespace) -> int:
+    try:
+        todos = list_team_todos(
+            root=args.root,
+            team_id=args.team_id,
+            by=args.actor,
+            status=args.status,
+        )
+    except TeamError as e:
+        print(str(e), file=sys.stderr)
+        return 1
+    print(json.dumps(todos, ensure_ascii=False, indent=2))
+    return 0
+
+
+def cmd_team_blocker_resolve(args: argparse.Namespace) -> int:
+    try:
+        result = resolve_team_blocker(
+            root=args.root,
+            team_id=args.team_id,
+            task_id=args.task_id,
+            by=args.actor,
+            reason_code=args.reason_code,
+            note=args.note,
+        )
+    except TeamError as e:
+        print(str(e), file=sys.stderr)
+        return 1
+    print(json.dumps({
+        "task_id": result["task_id"],
+        "reason_code": result.get("reason_code"),
+        "resolved_count": result["resolved_count"],
+    }, ensure_ascii=False))
+    return 0
+
+
 def cmd_team_eng_note(args: argparse.Namespace) -> int:
     try:
         entry = eng_status_note(
@@ -811,6 +1166,175 @@ def cmd_team_eng_note(args: argparse.Namespace) -> int:
     print(f"eng_status_note task={args.task_id} by={args.actor}")
     print(json.dumps(entry, ensure_ascii=False))
     return 0
+
+
+
+def cmd_team_eng_decompose(args: argparse.Namespace) -> int:
+    """Eng writes real acceptance + decomposition package."""
+    import json as _json
+    acceptance = _json.loads(args.acceptance_json)
+    if not isinstance(acceptance, list):
+        print("acceptance-json 须为 JSON 数组", file=sys.stderr)
+        return 2
+    in_scope = list(args.in_scope or [])
+    out_of_scope = list(args.out_of_scope or [])
+    try:
+        decomp = eng_decompose(
+            root=args.root,
+            team_id=args.team_id,
+            task_id=args.task_id,
+            actor=args.actor,
+            goal=args.goal,
+            in_scope=in_scope,
+            out_of_scope=out_of_scope,
+            acceptance=acceptance,
+            worktree=args.worktree,
+            notes=args.note,
+        )
+    except TeamError as e:
+        print(str(e), file=sys.stderr)
+        return 1
+    print(f"eng_decompose task={args.task_id} by={args.actor}")
+    print(json.dumps(decomp, ensure_ascii=False, indent=2))
+    return 0
+
+
+def cmd_team_handoff(args: argparse.Namespace) -> int:
+    try:
+        handoff = eng_handoff_developer(
+            root=args.root,
+            team_id=args.team_id,
+            task_id=args.task_id,
+            actor=args.actor,
+            developer=args.developer,
+            worktree=args.worktree,
+            rules_version=args.rules_version,
+            parent_task_id=args.parent_task_id,
+            note=args.note,
+            mode=args.mode,
+        )
+    except TeamError as e:
+        print(str(e), file=sys.stderr)
+        return 1
+    print(f"handoff {handoff['handoff_id']} task={args.task_id} -> {args.developer}")
+    print(json.dumps(handoff, ensure_ascii=False, indent=2))
+    return 0
+
+
+def cmd_team_ack_handoff(args: argparse.Namespace) -> int:
+    try:
+        handoff = ack_handoff(
+            root=args.root,
+            team_id=args.team_id,
+            handoff_id=args.handoff_id,
+            actor=args.actor,
+            run_id=args.run_id,
+            role=getattr(args, "role", None) or "developer",
+        )
+    except (TeamError, AuthzError) as e:
+        print(str(e), file=sys.stderr)
+        return 1
+    print(f"acked {args.handoff_id} by={args.actor}")
+    print(json.dumps(handoff, ensure_ascii=False, indent=2))
+    return 0
+
+
+def cmd_team_handoff_status(args: argparse.Namespace) -> int:
+    try:
+        handoff = mark_handoff_status(
+            root=args.root,
+            team_id=args.team_id,
+            handoff_id=args.handoff_id,
+            status=args.status,
+            actor=args.actor,
+            note=args.note,
+        )
+    except TeamError as e:
+        print(str(e), file=sys.stderr)
+        return 1
+    print(json.dumps(handoff, ensure_ascii=False, indent=2))
+    return 0
+
+
+def cmd_team_rework(args: argparse.Namespace) -> int:
+    try:
+        handoff = start_rework(
+            root=args.root,
+            team_id=args.team_id,
+            task_id=args.task_id,
+            actor=args.actor,
+            reason=args.reason,
+            developer=args.developer,
+        )
+    except TeamError as e:
+        print(str(e), file=sys.stderr)
+        return 1
+    print(f"rework task={args.task_id}")
+    print(json.dumps(handoff, ensure_ascii=False, indent=2))
+    return 0
+
+
+def cmd_team_escalate_scope(args: argparse.Namespace) -> int:
+    try:
+        entry = escalate_scope_change(
+            root=args.root,
+            team_id=args.team_id,
+            task_id=args.task_id,
+            actor=args.actor,
+            reason=args.reason,
+            to=args.to,
+        )
+    except TeamError as e:
+        print(str(e), file=sys.stderr)
+        return 1
+    print(json.dumps(entry, ensure_ascii=False, indent=2))
+    return 0
+
+
+def cmd_team_omb_delegate(args: argparse.Namespace) -> int:
+    result = omb_delegate(
+        root=args.root,
+        team_id=args.team_id,
+        handoff_id=args.handoff_id,
+        actor=args.actor,
+    )
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    # Always non-zero-ish? Keep 0 but clearly blocked so scripts can assert fields.
+    return 0
+
+
+def cmd_team_record_commit(args: argparse.Namespace) -> int:
+    try:
+        handoff = record_local_developer_commit(
+            root=args.root,
+            team_id=args.team_id,
+            task_id=args.task_id,
+            handoff_id=args.handoff_id,
+            commit=args.commit,
+            actor=args.actor,
+        )
+    except TeamError as e:
+        print(str(e), file=sys.stderr)
+        return 1
+    print(json.dumps(handoff, ensure_ascii=False, indent=2))
+    return 0
+
+
+def cmd_team_set_deps(args: argparse.Namespace) -> int:
+    try:
+        team = set_task_dependencies(
+            root=args.root,
+            team_id=args.team_id,
+            task_id=args.task_id,
+            depends_on=list(args.depends_on or []),
+            by=args.actor,
+        )
+    except TeamError as e:
+        print(str(e), file=sys.stderr)
+        return 1
+    print(json.dumps({"dependencies": team.get("dependencies")}, ensure_ascii=False, indent=2))
+    return 0
+
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -833,6 +1357,12 @@ def build_parser() -> argparse.ArgumentParser:
     _add_task_selectors(p_tr)
     p_tr.add_argument("--to", required=True, help="目标状态")
     p_tr.add_argument("--actor", required=True, help="操作者（如 chief/developer）")
+    p_tr.add_argument(
+        "--role",
+        default=None,
+        help="可信角色映射：chief|developer|verifier|nancy|matcha|eng_stub|merge_bot",
+    )
+    p_tr.add_argument("--profile", default=None, help="同 --role（别名）")
     p_tr.add_argument("--note", default=None)
     p_tr.add_argument(
         "--no-budget-block",
@@ -876,17 +1406,40 @@ def build_parser() -> argparse.ArgumentParser:
     _add_task_selectors(p_mp)
     p_mp.set_defaults(func=cmd_merge_precheck)
 
-    p_rc = sub.add_parser("record-check", help="写入/更新 verification.checks 与 commits")
+    p_rc = sub.add_parser(
+        "record-check",
+        help="写入 verification.checks（verifier 可信；--diagnostic 仅诊断）",
+    )
     _add_task_selectors(p_rc)
     p_rc.add_argument("--acceptance-id", required=True)
     p_rc.add_argument("--executed", type=_parse_bool, required=True)
     p_rc.add_argument("--exit-code", type=int, default=None)
     p_rc.add_argument("--bound-commit", default=None)
-    p_rc.add_argument("--artifact-commit", default=None)
+    p_rc.add_argument(
+        "--artifact-commit",
+        default=None,
+        help="勿与可信验收同用；请改用 set-artifact",
+    )
     p_rc.add_argument("--result", default=None, choices=["pass", "fail", "inconclusive"])
     p_rc.add_argument("--log-path", default=None)
     p_rc.add_argument("--notes", default=None)
+    p_rc.add_argument("--actor", required=True, help="执行身份（须与 --role 匹配）")
+    p_rc.add_argument("--role", default=None, help="chief|developer|verifier|…")
+    p_rc.add_argument("--profile", default=None)
+    p_rc.add_argument(
+        "--diagnostic",
+        action="store_true",
+        help="标记为 diagnostic/imported_evidence，不计入 verify-gate",
+    )
     p_rc.set_defaults(func=cmd_record_check)
+
+    p_sa = sub.add_parser("set-artifact", help="开发者写入 artifact.commit（与验收分离）")
+    _add_task_selectors(p_sa)
+    p_sa.add_argument("--commit", required=True)
+    p_sa.add_argument("--actor", default="developer")
+    p_sa.add_argument("--role", default="developer")
+    p_sa.add_argument("--profile", default=None)
+    p_sa.set_defaults(func=cmd_set_artifact)
 
 
     p_ii = sub.add_parser(
@@ -1001,7 +1554,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_rt.set_defaults(func=cmd_record_tokens)
 
     # ---- Lite L5 lessons ----
-    p_la = sub.add_parser("lesson-add", help="提名经验候选（Lite L5）")
+    p_la = sub.add_parser("lesson-add", help="提名经验候选（Lite L5 / T4 scope+probe）")
     _add_task_selectors(p_la)
     p_la.add_argument("--id", required=True, help="lesson id")
     p_la.add_argument("--summary", required=True)
@@ -1010,17 +1563,28 @@ def build_parser() -> argparse.ArgumentParser:
     p_la.add_argument("--rule-path", default=None, help="拟发布规则相对路径")
     p_la.add_argument("--tag", action="append", default=None)
     p_la.add_argument("--actor", default="developer")
+    p_la.add_argument("--scope-json", default=None, help='适用范围 JSON，如 {"task_kind":"fix"}')
+    p_la.add_argument("--applies-to", default=None, help="适用范围简写（task_kind 字符串）")
+    p_la.add_argument("--probe", default=None, help="探针描述/命令（非空）")
+    p_la.add_argument("--probe-ref", default=None, help="探针引用 id")
+    p_la.add_argument("--probe-json", default=None, help="探针 JSON（ref/description/expected）")
     p_la.set_defaults(func=cmd_lesson_add)
 
-    p_lr = sub.add_parser("lesson-review", help="审核经验候选 approve|reject（Lite L5）")
+    p_lr = sub.add_parser("lesson-review", help="审核经验候选 approve|reject（T4：approve 须探针证据）")
     _add_task_selectors(p_lr)
     p_lr.add_argument("--id", required=True)
     p_lr.add_argument("--verdict", required=True, choices=["approve", "reject"])
     p_lr.add_argument("--notes", default=None)
     p_lr.add_argument("--actor", default="verifier")
+    p_lr.add_argument(
+        "--probe-result-json",
+        default=None,
+        help='批准必填：{"probe_id":"...","passed":true,"stdout_summary":"...","at":"..."}',
+    )
+    p_lr.add_argument("--evidence-json", default=None, help="等同 --probe-result-json")
     p_lr.set_defaults(func=cmd_lesson_review)
 
-    p_lp = sub.add_parser("lesson-publish", help="发布已批准经验到 store（Lite L5）")
+    p_lp = sub.add_parser("lesson-publish", help="发布已批准经验到 store（Lite L5 / T4 版本一致）")
     _add_task_selectors(p_lp)
     p_lp.add_argument("--id", required=True)
     p_lp.add_argument("--actor", default="chief")
@@ -1040,6 +1604,33 @@ def build_parser() -> argparse.ArgumentParser:
     p_ls.add_argument("--id", required=True)
     p_ls.set_defaults(func=cmd_lesson_show)
 
+    p_lrl = sub.add_parser("lesson-rule-load", help="Eng 加载规则回执（T4）")
+    _add_task_selectors(p_lrl)
+    p_lrl.add_argument("--team-id", default=None)
+    p_lrl.add_argument("--id", required=True, help="lesson id")
+    p_lrl.add_argument("--eng", required=True)
+    p_lrl.add_argument("--rules-version", required=True)
+    p_lrl.add_argument("--actor", default="Eng-A")
+    p_lrl.set_defaults(func=cmd_lesson_rule_load)
+
+    p_lrr = sub.add_parser("lesson-rule-receive", help="Developer 接收规则回执（T4）")
+    _add_task_selectors(p_lrr)
+    p_lrr.add_argument("--team-id", default=None)
+    p_lrr.add_argument("--id", required=True, help="lesson id")
+    p_lrr.add_argument("--developer", required=True)
+    p_lrr.add_argument("--rules-version", required=True)
+    p_lrr.add_argument("--handoff-id", default=None)
+    p_lrr.add_argument("--actor", default="developer")
+    p_lrr.set_defaults(func=cmd_lesson_rule_receive)
+
+    p_lrec = sub.add_parser("lesson-recurrence", help="已发布经验防复发探针记录（T4）")
+    _add_task_selectors(p_lrec)
+    p_lrec.add_argument("--team-id", default=None)
+    p_lrec.add_argument("--id", required=True, help="lesson id")
+    p_lrec.add_argument("--probe-result-json", required=True)
+    p_lrec.add_argument("--actor", default="verifier")
+    p_lrec.set_defaults(func=cmd_lesson_recurrence)
+
 
     # ---- Team dual-task ----
     p_tc = sub.add_parser("team-create", help="创建 Team run（Nancy/Matcha）")
@@ -1047,7 +1638,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_tc.add_argument("--team-id", required=True)
     p_tc.add_argument("--title", required=True)
     p_tc.add_argument("--requester", default="user")
-    p_tc.add_argument("--eng-stub", action="append", default=None, help="Eng stub 名（可多次）")
+    p_tc.add_argument("--eng-stub", action="append", default=None, help="Eng 协调者名（字段名 eng_stubs 兼容保留；可多次）")
     p_tc.add_argument("--force", action="store_true")
     p_tc.set_defaults(func=cmd_team_create)
 
@@ -1058,10 +1649,15 @@ def build_parser() -> argparse.ArgumentParser:
     p_ta.add_argument("--title", required=True)
     p_ta.add_argument("--role", default="worker")
     p_ta.add_argument("--actor", default="Matcha")
+    p_ta.add_argument(
+        "--parent-task-id",
+        default=None,
+        help="可选顶层 parent_task_id（勿塞进 team 对象）",
+    )
     p_ta.add_argument("--force", action="store_true")
     p_ta.set_defaults(func=cmd_team_add_task)
 
-    p_as = sub.add_parser("team-assign", help="Matcha 指派/跟踪 Eng（stub）")
+    p_as = sub.add_parser("team-assign", help="Matcha 指派 Eng 工作包（可带依赖/负载检查）")
     p_as.add_argument("--root", required=True)
     p_as.add_argument("--team-id", required=True)
     p_as.add_argument("--task-id", required=True)
@@ -1069,6 +1665,12 @@ def build_parser() -> argparse.ArgumentParser:
     p_as.add_argument("--assignee-role", default="eng_stub")
     p_as.add_argument("--actor", default="Matcha")
     p_as.add_argument("--note", default=None)
+    p_as.add_argument(
+        "--depends-on",
+        action="append",
+        default=None,
+        help="跨工作包依赖 task_id（可多次）",
+    )
     p_as.set_defaults(func=cmd_team_assign)
 
     p_su = sub.add_parser("team-summarize", help="Nancy 汇总双任务进度")
@@ -1088,7 +1690,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_ts.set_defaults(func=cmd_team_status)
 
-    p_en = sub.add_parser("team-eng-note", help="Eng stub 仅写状态备注（硬拦）")
+    p_en = sub.add_parser("team-eng-note", help="Eng 写状态备注（硬拦；结构化拆解用 team-eng-decompose）")
     p_en.add_argument("--root", required=True)
     p_en.add_argument("--team-id", required=True)
     p_en.add_argument("--task-id", required=True)
@@ -1096,6 +1698,148 @@ def build_parser() -> argparse.ArgumentParser:
     p_en.add_argument("--note", required=True)
     p_en.set_defaults(func=cmd_team_eng_note)
 
+    # ---- Team T2 handoff / decompose ----
+    p_ed = sub.add_parser("team-eng-decompose", help="Eng 写入拆解包并替换占位验收（T2）")
+    p_ed.add_argument("--root", required=True)
+    p_ed.add_argument("--team-id", required=True)
+    p_ed.add_argument("--task-id", required=True)
+    p_ed.add_argument("--actor", required=True)
+    p_ed.add_argument("--goal", required=True)
+    p_ed.add_argument("--in-scope", action="append", default=None)
+    p_ed.add_argument("--out-of-scope", action="append", default=None)
+    p_ed.add_argument("--acceptance-json", required=True)
+    p_ed.add_argument("--worktree", default=None)
+    p_ed.add_argument("--note", default=None)
+    p_ed.set_defaults(func=cmd_team_eng_decompose)
+
+    p_ho = sub.add_parser("team-handoff", help="Eng→Developer 持久化 handoff（T2）")
+    p_ho.add_argument("--root", required=True)
+    p_ho.add_argument("--team-id", required=True)
+    p_ho.add_argument("--task-id", required=True)
+    p_ho.add_argument("--actor", required=True)
+    p_ho.add_argument("--developer", default="developer")
+    p_ho.add_argument("--worktree", default=None)
+    p_ho.add_argument("--rules-version", default=None)
+    p_ho.add_argument("--parent-task-id", default=None)
+    p_ho.add_argument("--note", default=None)
+    p_ho.add_argument("--mode", default="local", choices=["local", "simulated", "omb"])
+    p_ho.set_defaults(func=cmd_team_handoff)
+
+    p_ak = sub.add_parser("team-ack-handoff", help="Developer 接单回执（T2）")
+    p_ak.add_argument("--root", required=True)
+    p_ak.add_argument("--team-id", required=True)
+    p_ak.add_argument("--handoff-id", required=True)
+    p_ak.add_argument("--actor", default="developer")
+    p_ak.add_argument("--role", default="developer")
+    p_ak.add_argument("--run-id", default=None)
+    p_ak.set_defaults(func=cmd_team_ack_handoff)
+
+    p_hs = sub.add_parser("team-handoff-status", help="更新 handoff 状态（T2）")
+    p_hs.add_argument("--root", required=True)
+    p_hs.add_argument("--team-id", required=True)
+    p_hs.add_argument("--handoff-id", required=True)
+    p_hs.add_argument(
+        "--status",
+        required=True,
+        choices=["proposed", "acked", "in_progress", "pending_verify", "rework", "done", "blocked"],
+    )
+    p_hs.add_argument("--actor", required=True)
+    p_hs.add_argument("--note", default=None)
+    p_hs.set_defaults(func=cmd_team_handoff_status)
+
+    p_rw = sub.add_parser("team-rework", help="验证失败回流原 Eng（T2）")
+    p_rw.add_argument("--root", required=True)
+    p_rw.add_argument("--team-id", required=True)
+    p_rw.add_argument("--task-id", required=True)
+    p_rw.add_argument("--actor", required=True)
+    p_rw.add_argument("--reason", required=True)
+    p_rw.add_argument("--developer", default=None)
+    p_rw.set_defaults(func=cmd_team_rework)
+
+    p_es = sub.add_parser("team-escalate-scope", help="范围/依赖变更升级 Matcha/chief（T2）")
+    p_es.add_argument("--root", required=True)
+    p_es.add_argument("--team-id", required=True)
+    p_es.add_argument("--task-id", required=True)
+    p_es.add_argument("--actor", required=True)
+    p_es.add_argument("--reason", required=True)
+    p_es.add_argument("--to", default="matcha", choices=["matcha", "chief"])
+    p_es.set_defaults(func=cmd_team_escalate_scope)
+
+    p_od = sub.add_parser("team-omb-delegate", help="尝试 OMB 多助手委派（当前恒 blocked/simulated）（T2）")
+    p_od.add_argument("--root", required=True)
+    p_od.add_argument("--team-id", required=True)
+    p_od.add_argument("--handoff-id", required=True)
+    p_od.add_argument("--actor", default="system")
+    p_od.set_defaults(func=cmd_team_omb_delegate)
+
+    p_rcm = sub.add_parser("team-record-commit", help="记录本地/mock Developer commit 到 handoff（T2）")
+    p_rcm.add_argument("--root", required=True)
+    p_rcm.add_argument("--team-id", required=True)
+    p_rcm.add_argument("--task-id", required=True)
+    p_rcm.add_argument("--handoff-id", required=True)
+    p_rcm.add_argument("--commit", required=True)
+    p_rcm.add_argument("--actor", default="developer")
+    p_rcm.set_defaults(func=cmd_team_record_commit)
+
+    p_sd = sub.add_parser("team-set-deps", help="Matcha 设置跨工作包依赖（T2）")
+    p_sd.add_argument("--root", required=True)
+    p_sd.add_argument("--team-id", required=True)
+    p_sd.add_argument("--task-id", required=True)
+    p_sd.add_argument("--depends-on", action="append", default=None)
+    p_sd.add_argument("--actor", default="Matcha")
+    p_sd.set_defaults(func=cmd_team_set_deps)
+
+    # ---- Team T3 Nancy todos / blocker resolve ----
+    p_tadd = sub.add_parser("team-todo-add", help="Nancy 持久化待办（T3；写入 team.json）")
+    p_tadd.add_argument("--root", required=True)
+    p_tadd.add_argument("--team-id", required=True)
+    p_tadd.add_argument("--text", required=True)
+    p_tadd.add_argument("--actor", default="Nancy")
+    p_tadd.add_argument("--source", default="nancy")
+    p_tadd.add_argument("--owner", default=None)
+    p_tadd.add_argument("--linked-task-id", default=None)
+    p_tadd.add_argument("--todo-id", default=None)
+    p_tadd.set_defaults(func=cmd_team_todo_add)
+
+    p_tdone = sub.add_parser(
+        "team-todo-done",
+        help="Nancy 勾销/升级待办（T3；done 须 --done-basis）",
+    )
+    p_tdone.add_argument("--root", required=True)
+    p_tdone.add_argument("--team-id", required=True)
+    p_tdone.add_argument("--todo-id", required=True)
+    p_tdone.add_argument("--actor", default="Nancy")
+    p_tdone.add_argument(
+        "--done-basis",
+        default=None,
+        help="user_confirmed | chief_confirmed | linked_task_completed:<id>",
+    )
+    p_tdone.add_argument("--evidence", default=None)
+    p_tdone.add_argument(
+        "--status",
+        default="done",
+        choices=["done", "escalated", "open"],
+    )
+    p_tdone.set_defaults(func=cmd_team_todo_done)
+
+    p_tlist = sub.add_parser("team-todo-list", help="列出 Team 持久待办（T3）")
+    p_tlist.add_argument("--root", required=True)
+    p_tlist.add_argument("--team-id", required=True)
+    p_tlist.add_argument("--actor", default="Nancy")
+    p_tlist.add_argument("--status", default=None, choices=["open", "done", "escalated"])
+    p_tlist.set_defaults(func=cmd_team_todo_list)
+
+    p_br = sub.add_parser(
+        "team-blocker-resolve",
+        help="解除 blockers_escalated 中 open 项（T3；解除后不再报警）",
+    )
+    p_br.add_argument("--root", required=True)
+    p_br.add_argument("--team-id", required=True)
+    p_br.add_argument("--task-id", required=True)
+    p_br.add_argument("--reason-code", default=None)
+    p_br.add_argument("--actor", default="Nancy")
+    p_br.add_argument("--note", default=None)
+    p_br.set_defaults(func=cmd_team_blocker_resolve)
 
     return parser
 

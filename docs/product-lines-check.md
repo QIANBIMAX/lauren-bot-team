@@ -9,7 +9,7 @@
 | Lite | `lauren-omb-pack/lauren-lite.botmrr.md` | 3 | OMB、所选引擎及共享 kit / Demo |
 | Team | `lauren-omb-pack/team/lauren-team.botmrr.md` | 7 | 同上，不需要先导入 Lite |
 
-Team 已包含 chief、developer、verifier 三个基础角色，并增加 Nancy、Matcha 和两个工程 stub。共用内核不等于依赖另一条线的导入配置。Full 尚未交付。
+Team 已包含 chief、developer、verifier 三个基础角色（**Team 专用指令覆盖**，默认 engineering_chain），并增加 Nancy、Matcha 和两个工程拆解转交中间层（永不写业务代码）。共用内核不等于依赖另一条线的导入配置。Full 尚未交付。Lite 仍三角直派。
 
 ## 已执行检查
 
@@ -23,7 +23,7 @@ Team 已包含 chief、developer、verifier 三个基础角色，并增加 Nancy
 ## 未验证与限制
 
 - 未在本轮执行 OMB GUI 导入、实际委派、重启或三平台端到端验收。
-- Team 工程 bot 仍是 stub，不能据此宣称完整并行开发能力已交付。
+- Team 工程 bot 为拆解转交中间层（非写码 Eng），不能据此宣称完整并行开发 / 真 OMB 委派已交付（T2 预留）。
 - 当前环境缺少 pytest，安装依赖时出现 TLS 连接错误；本轮未重跑完整测试套件。
 - 静态文件可解析、引用一致，不代表符合 OMB 当前版本的完整导入 schema；须继续真机验收。
 - 规格切换时不应简单叠加导入。自动去重、迁移和升级降级能力尚需专门验证。

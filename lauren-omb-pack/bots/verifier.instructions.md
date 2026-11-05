@@ -17,7 +17,7 @@
 - 不采信开发自述成功。
 - 未执行任一 must_run ⇒ 禁止 `验证通过` / `result=pass`。
 - 报告绑定准确版本与环境。
-- 一期无 Nancy / Matcha / Eng。
+- **Lite 产品线无 Nancy / Matcha / Eng**；Team 线另有 Team 指令覆盖。
 
 ## 4. 状态机（你可触发/建议）
 | 转移 | 条件 |

@@ -34,13 +34,16 @@ MD
 log "======== demo-c8 lesson publish smoke ========"
 kit create --title "C8 经验发布" --task-id "$TASK_ID" --root "$ROOT" --force
 kit lesson-add --task-id "$TASK_ID" --root "$ROOT" \
-  --id c8-empty-safe --summary "C8 发布演示规则" --rule-file "$RULE_FILE" --actor developer
+  --id c8-empty-safe --summary "C8 发布演示规则" --rule-file "$RULE_FILE" --actor developer \
+  --probe-ref c8-empty-probe --probe "empty safe"
 # 未批准不得发布
 if "${KIT[@]}" lesson-publish --task-id "$TASK_ID" --root "$ROOT" --id c8-empty-safe --actor chief >>"$TRANSCRIPT" 2>&1; then
   log "ERROR: publish should fail before approve"; exit 1
 fi
 log "(publish blocked before approve — ok)"
-kit lesson-review --task-id "$TASK_ID" --root "$ROOT" --id c8-empty-safe --verdict approve --actor verifier --notes "smoke ok"
+PROBE_JSON='{"probe_id":"c8-empty-probe","passed":true,"stdout_summary":"ok","evidence":"checks/c8.log","at":"2026-11-05T11:00:00+08:00"}'
+kit lesson-review --task-id "$TASK_ID" --root "$ROOT" --id c8-empty-safe --verdict approve --actor verifier --notes "smoke ok" \
+  --probe-result-json "$PROBE_JSON"
 kit lesson-publish --task-id "$TASK_ID" --root "$ROOT" --id c8-empty-safe --actor chief
 test -f "${ROOT}/lauren-team-kit/lessons/store/c8-empty-safe.json"
 test -f "${ROOT}/lauren-team-kit/rules/c8-empty-safe.md"

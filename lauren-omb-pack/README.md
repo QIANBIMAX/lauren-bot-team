@@ -16,11 +16,11 @@ Lite 与 Team **对等、独立**：选一条 Import，不要当成「先 Lite �
 | 产品线 | BotMRR（优先） | 旧格式兼容 | 角色（侧栏显示名） |
 |---|---|---|---|
 | **Lite** | [`lauren-lite.botmrr.md`](lauren-lite.botmrr.md) | [`team.mausteam.json`](team.mausteam.json) | 幕僚长 / 云端编程助手 / 验证助手 |
-| **Team** | [`team/lauren-team.botmrr.md`](team/lauren-team.botmrr.md) | [`team/team.mausteam.json`](team/team.mausteam.json) | 上表三角 + **Nancy私人助理** / **工程主管Matcha** / **工程bot①②**（复杂强制中间层：Eng 拆解→转交 developer） |
+| **Team** | [`team/lauren-team.botmrr.md`](team/lauren-team.botmrr.md) | [`team/team.mausteam.json`](team/team.mausteam.json) | 上表三角 + **Nancy私人助理** / **工程主管Matcha** / **工程bot①②**（默认 engineering_chain；Eng 拆解→转交 developer，永不写业务代码） |
 
 Team 使用无版本号目录与导入文件。详见 [团队说明](team/README.md)。
 
-**分流摘要：** Lite = 三角直派闭环。Team = 简单同 Lite；复杂强制 幕僚长→Matcha→工程bot→云端编程助手→验证助手。Eng 本期拆解并转交 developer，不做业务实现。Team 另有**减负协议**：催进度/列阻塞/复述状态转 Nancy（进度整本+待办）；routines 默认暂停。
+**分流摘要：** Lite = 三角直派闭环（可直派）。Team = 默认 **engineering_chain**（幕僚长→Matcha→Eng→developer→验证助手）+ 可选 **fast_path**（默认关）。口径：原图核心链 + 可选捷径。Eng 拆解转交、永不写业务代码。Team 另有**减负协议**：催进度/列阻塞/复述状态转 Nancy；本包 routines:[] 未预置例程。
 
 ### 联系方式（省 token）
 
@@ -45,7 +45,7 @@ Team 使用无版本号目录与导入文件。详见 [团队说明](team/README
 | `bots/developer.instructions.md` | 云端编程助手 |
 | `bots/verifier.instructions.md` | 验证助手 |
 
-Team 角色说明在 `team/bots/`（Nancy私人助理 / 工程主管Matcha / 工程bot）。Group 参考 `groups/lauren-core.md` / `team/groups/`（群可选）。
+Team 角色说明在 `team/bots/`（含 **Team 专用** chief/developer/verifier + Nancy / Matcha / Eng）。Group 参考 `groups/lauren-core.md` / `team/groups/`（群可选）。
 
 ## 清单
 

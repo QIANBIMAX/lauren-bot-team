@@ -104,6 +104,12 @@ def evaluate_verify_gate(task: dict[str, Any]) -> list[str]:
         result = verification.get("result")
         if result != "pass":
             errors.append(f"verification.result 必须为 pass，实际 {result!r}")
+        # Trusted channel marker (T1); legacy tasks without trust still need trusted checks
+        vtrust = verification.get("trust")
+        if vtrust not in (None, "verified_run"):
+            errors.append(
+                f"verification.trust 必须为 verified_run 才可自动验收，实际 {vtrust!r}"
+            )
 
         bound = verification.get("bound_commit")
         if not isinstance(bound, str) or not bound.strip():
@@ -115,16 +121,42 @@ def evaluate_verify_gate(task: dict[str, Any]) -> list[str]:
             errors.append("verification.checks 必须为 array")
             checks = []
 
+        round_id = verification.get("round_id")
+        ver_trust = verification.get("trust")
+
         by_id: dict[str, dict[str, Any]] = {}
         for c in checks:
-            if isinstance(c, dict) and isinstance(c.get("acceptance_id"), str):
-                by_id[c["acceptance_id"]] = c
+            if not isinstance(c, dict) or not isinstance(c.get("acceptance_id"), str):
+                continue
+            # Only trusted checks in the current verification round count for the gate.
+            trust = c.get("trust")
+            if trust in (None, ""):
+                # Legacy entries without trust stamp: accept only if overall
+                # verification.trust is verified_run (seeded by new recorder).
+                if ver_trust != "verified_run":
+                    continue
+            elif trust != "verified_run":
+                continue
+            if round_id and c.get("round_id") not in (None, round_id):
+                continue
+            by_id[c["acceptance_id"]] = c
+
+        if must_ids and not by_id and checks:
+            errors.append(
+                "verification.checks 无当前轮次可信记录"
+                "（diagnostic/imported_evidence 不计入自动验收）"
+            )
 
         for aid in must_ids:
             c = by_id.get(aid)
             if c is None:
                 failed_ids.append(aid)
-                errors.append(f"must_run 验收项 {aid} 缺少 checks 记录")
+                errors.append(
+                    f"must_run 验收项 {aid} 缺少可信 checks 记录"
+                    f"（需 verifier 通道 + trust=verified_run"
+                    + (f" + round_id={round_id}" if round_id else "")
+                    + "）"
+                )
                 continue
             if c.get("executed") is not True:
                 failed_ids.append(aid)

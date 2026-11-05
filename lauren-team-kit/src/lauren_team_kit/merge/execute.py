@@ -11,6 +11,8 @@ import subprocess
 from pathlib import Path
 from typing import Any
 
+from lauren_team_kit.atomic_io import integration_merge_lock
+from lauren_team_kit.authz import AuthzError, authorize_merge, resolve_principal
 from lauren_team_kit.merge_precheck import (
     _integration_branch,
     _resolve_root,
@@ -19,7 +21,7 @@ from lauren_team_kit.merge_precheck import (
 )
 from lauren_team_kit.protocol import save_task, transition_task
 from lauren_team_kit.state_machine import IllegalTransitionError
-from lauren_team_kit.verify_gate import commits_match
+from lauren_team_kit.verify_gate import assert_verify_gate, commits_match, evaluate_verify_gate
 
 EXIT_OK = 0
 EXIT_FAIL = 1
@@ -197,7 +199,7 @@ def plan_merge(
     }
 
 
-def _ensure_待合并(task: dict[str, Any], *, actor: str) -> dict[str, Any]:
+def _ensure_待合并(task: dict[str, Any], *, actor: str, role: str | None = None) -> dict[str, Any]:
     status = task.get("status")
     if status == "待合并":
         return task
@@ -206,11 +208,66 @@ def _ensure_待合并(task: dict[str, Any], *, actor: str) -> dict[str, Any]:
             task,
             to_status="待合并",
             actor=actor,
+            role=role or "merge_bot",
             note="merge 入口：验证通过 → 待合并",
         )
     raise IllegalTransitionError(
         f"merge 要求状态为 待合并 或 验证通过，当前={status!r}"
     )
+
+
+def _acceptance_ok_for_completion(task: dict[str, Any]) -> tuple[bool, list[str]]:
+    """Valid acceptance required before marking 已完成 (including already_merged)."""
+    errors = evaluate_verify_gate(task)
+    ver = task.get("verification") if isinstance(task.get("verification"), dict) else {}
+    if ver.get("result") != "pass":
+        msg = f"verification.result 必须为 pass，实际 {ver.get('result')!r}"
+        if msg not in errors:
+            errors.append(msg)
+    checks = ver.get("checks") if isinstance(ver.get("checks"), list) else []
+    trusted = [
+        c
+        for c in checks
+        if isinstance(c, dict) and c.get("trust") in (None, "verified_run")
+        and (not ver.get("round_id") or c.get("round_id") in (None, ver.get("round_id")))
+    ]
+    # After T1, trust stamp required; legacy None only if verification.trust set
+    if ver.get("trust") == "verified_run":
+        trusted = [
+            c
+            for c in checks
+            if isinstance(c, dict)
+            and (c.get("trust") in (None, "verified_run"))
+            and (not ver.get("round_id") or c.get("round_id") in (None, ver.get("round_id")))
+        ]
+    else:
+        trusted = [
+            c for c in checks if isinstance(c, dict) and c.get("trust") == "verified_run"
+        ]
+    if not trusted:
+        errors.append("验收 checks 为空或无可信记录，不能因代码已在集成分支而标完成")
+    # Prior post-check failure must not auto-succeed on retry
+    merge = task.get("merge") if isinstance(task.get("merge"), dict) else {}
+    post = merge.get("post_check") if isinstance(merge.get("post_check"), dict) else None
+    if post is not None and post.get("ok") is False:
+        errors.append(
+            "上次 merge post_check 失败；重试不得自动转成功，需重新验收/修复后置条件"
+        )
+    return (not errors), errors
+
+
+def _post_paths_ok(worktree: Path, paths: list[str] | None) -> tuple[bool, list[dict[str, Any]], str]:
+    path_checks: list[dict[str, Any]] = []
+    ok = True
+    detail_bits: list[str] = []
+    for rel in paths or []:
+        p = worktree / rel
+        exists = p.exists()
+        path_checks.append({"path": rel, "ok": exists})
+        if not exists:
+            ok = False
+            detail_bits.append(f"缺少文件 {rel}")
+    return ok, path_checks, "；".join(detail_bits)
 
 
 def _git_commits_same(repo: Path, a: str, b: str) -> bool:
@@ -228,6 +285,7 @@ def execute_merge(
     task_file: str | Path | None = None,
     confirm: bool = False,
     actor: str = "merge",
+    role: str | None = None,
     post_check_paths: list[str] | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     """Run confirm-gated local merge into integration branch.
@@ -265,6 +323,18 @@ def execute_merge(
         )
         return result, task
 
+    try:
+        prin = resolve_principal(
+            actor=actor,
+            role=role or ("merge_bot" if actor in ("merge", "merge_bot") else None),
+        )
+        authorize_merge(prin)
+        merge_role = prin.role
+    except AuthzError as e:
+        result["action"] = "authz_denied"
+        result["message"] = str(e)
+        return result, task
+
     worktree = _resolve_worktree(project_root, task)
     integ = _integration_branch(task)
     if worktree is None or not integ:
@@ -296,35 +366,34 @@ def execute_merge(
             )
             return result, task
 
-    # Idempotent before status precheck: already on integration history
-    # (covers status=已完成 re-requests without re-merging)
+    # Code already on integration ≠ delivery accepted. All paths (incl. idempotent)
+    # must still validate acceptance, SHA, round, and post-check paths (T1 / R3).
     integ_tip = _rev_parse_commit(worktree, integ)
-    if integ_tip and _is_ancestor(worktree, bound_full, integ_tip):
-        updated = dict(task)
-        try:
-            if updated.get("status") not in ("已完成",):
-                updated = _ensure_待合并(updated, actor=actor)
-                if updated.get("status") == "待合并":
-                    updated = transition_task(
-                        updated,
-                        to_status="已完成",
-                        actor=actor,
-                        note=f"幂等：{integ} 已包含 {bound_full[:12]}，跳过重复 merge",
-                    )
-        except IllegalTransitionError as e:
-            # already 已完成 or illegal — still report success for git state
-            result["transition_note"] = str(e)
+    already_in_integration = bool(
+        integ_tip and _is_ancestor(worktree, bound_full, integ_tip)
+    )
 
+    accept_ok, accept_errors = _acceptance_ok_for_completion(task)
+    post_ok, path_checks, post_detail = _post_paths_ok(worktree, post_check_paths)
+
+    if already_in_integration:
         merge_info = {
             "already_merged": True,
+            "already_in_integration": True,
             "integration_before": integ_tip,
             "integration_after": integ_tip,
             "bound": bound_full,
             "method": "noop",
-            "message": f"{integ} 已包含 bound，未重复合并",
+            "message": f"{integ} 已包含 bound（代码层面）",
+            "post_check": {
+                "ok": post_ok,
+                "detail": post_detail or "无后置路径要求",
+                "paths": path_checks,
+            },
+            "acceptance_ok": accept_ok,
+            "acceptance_errors": accept_errors,
         }
-        updated = dict(updated)
-        updated["merge"] = merge_info
+        updated = dict(task)
         ev_rel = updated.get("evidence_dir")
         if isinstance(ev_rel, str) and ev_rel:
             ev_path = (project_root / ev_rel).resolve()
@@ -332,6 +401,64 @@ def execute_merge(
             ev_path = tf.parent
         else:
             ev_path = project_root
+
+        if not accept_ok or not post_ok:
+            # Report containment but REFUSE completion
+            reasons = list(accept_errors)
+            if not post_ok:
+                reasons.append(post_detail or "后置检查失败")
+            merge_info["message"] = (
+                f"代码已在 {integ}，但交付未验收完成，拒绝标已完成："
+                + "；".join(reasons)
+            )
+            updated["merge"] = merge_info
+            report_path = _write_merge_report(
+                ev_path,
+                {
+                    **merge_info,
+                    "task_id": updated.get("task_id"),
+                    "status": updated.get("status"),
+                    "refused_completion": True,
+                },
+            )
+            merge_info["report_path"] = str(report_path)
+            updated["merge"] = merge_info
+            result["ok"] = False
+            result["exit_code"] = EXIT_FAIL
+            result["action"] = "already_in_integration_rejected"
+            result["merge"] = merge_info
+            result["message"] = merge_info["message"]
+            result["acceptance_errors"] = accept_errors
+            return result, updated
+
+        # Acceptance + post-check OK → idempotent complete
+        try:
+            if updated.get("status") not in ("已完成",):
+                updated = _ensure_待合并(updated, actor=actor, role=merge_role)
+                if updated.get("status") == "待合并":
+                    updated = transition_task(
+                        updated,
+                        to_status="已完成",
+                        actor=actor,
+                        role=merge_role,
+                        note=f"幂等：{integ} 已包含 {bound_full[:12]} 且验收有效，跳过重复 merge",
+                    )
+        except (IllegalTransitionError, AuthzError) as e:
+            result["transition_note"] = str(e)
+            if updated.get("status") != "已完成":
+                merge_info["message"] = f"验收有效且已在集成，但状态迁移失败: {e}"
+                updated = dict(updated)
+                updated["merge"] = merge_info
+                result["ok"] = False
+                result["exit_code"] = EXIT_FAIL
+                result["action"] = "already_in_integration_transition_failed"
+                result["merge"] = merge_info
+                result["message"] = merge_info["message"]
+                return result, updated
+
+        merge_info["message"] = f"{integ} 已包含 bound，验收有效，未重复合并"
+        updated = dict(updated)
+        updated["merge"] = merge_info
         report_path = _write_merge_report(
             ev_path,
             {
@@ -349,7 +476,14 @@ def execute_merge(
         result["message"] = merge_info["message"]
         return result, updated
 
-    # Re-run full precheck (only when not already merged)
+    # Not yet on integration: full precheck then merge under serial lock
+    if not accept_ok:
+        result["action"] = "acceptance_failed"
+        result["exit_code"] = EXIT_FAIL
+        result["message"] = "合并前验收无效: " + "；".join(accept_errors)
+        result["acceptance_errors"] = accept_errors
+        return result, task
+
     precheck = evaluate_merge_precheck(task, root=project_root, task_file=tf)
     result["precheck"] = precheck
     if not precheck.get("ok"):
@@ -358,9 +492,39 @@ def execute_merge(
         result["message"] = "执行前预检失败，拒绝 merge"
         return result, task
 
+    with integration_merge_lock(worktree, integ):
+        return _execute_merge_git(
+            task=task,
+            worktree=worktree,
+            integ=integ,
+            integ_tip=integ_tip,
+            bound_full=bound_full,
+            project_root=project_root,
+            tf=tf,
+            actor=actor,
+            merge_role=merge_role,
+            post_check_paths=post_check_paths,
+            result=result,
+        )
+
+
+def _execute_merge_git(
+    *,
+    task: dict[str, Any],
+    worktree: Path,
+    integ: str,
+    integ_tip: str | None,
+    bound_full: str,
+    project_root: Path,
+    tf: Path | None,
+    actor: str,
+    merge_role: str,
+    post_check_paths: list[str] | None,
+    result: dict[str, Any],
+) -> tuple[dict[str, Any], dict[str, Any]]:
     # Prepare transition to 待合并
     try:
-        updated = _ensure_待合并(dict(task), actor=actor)
+        updated = _ensure_待合并(dict(task), actor=actor, role=merge_role)
     except IllegalTransitionError as e:
         result["action"] = "bad_status"
         result["message"] = str(e)
@@ -415,6 +579,7 @@ def execute_merge(
                 updated,
                 to_status="合并失败",
                 actor=actor,
+                role=merge_role,
                 note=merge_info["message"],
             )
         except IllegalTransitionError:
@@ -476,6 +641,7 @@ def execute_merge(
                 updated,
                 to_status="合并失败",
                 actor=actor,
+                role=merge_role,
                 note=f"git 已合并但后续检查失败: {post_detail}",
             )
         except IllegalTransitionError:
@@ -516,6 +682,7 @@ def execute_merge(
             updated,
             to_status="已完成",
             actor=actor,
+                role=merge_role,
             note=f"已合入 {integ}（{method}）{bound_full[:12]} → {str(after)[:12] if after else '?'}",
         )
     except IllegalTransitionError as e:

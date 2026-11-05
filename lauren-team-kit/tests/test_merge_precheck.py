@@ -10,10 +10,10 @@ from lauren_team_kit.merge_precheck import NOTE, evaluate_merge_precheck
 from lauren_team_kit.protocol import (
     create_task,
     load_task,
-    record_check,
     save_task,
     transition_task,
 )
+from _seed import seed_trusted_pass
 
 
 def _git(repo: Path, *args: str) -> str:
@@ -56,15 +56,7 @@ def _task_to_verified(tmp_path: Path, task_id: str, commit: str) -> Path:
     task = load_task(path)
     task = transition_task(task, to_status="执行中", actor="chief")
     task = transition_task(task, to_status="待验证", actor="developer")
-    task = record_check(
-        task,
-        acceptance_id="A1",
-        executed=True,
-        exit_code=0,
-        bound_commit=commit,
-        artifact_commit=commit,
-        result="pass",
-    )
+    task = seed_trusted_pass(task, commit=commit)
     task = transition_task(task, to_status="验证通过", actor="verifier")
     save_task(path, task)
     return path

@@ -300,3 +300,27 @@ def test_matcha_cannot_eng_note(root: Path) -> None:
             actor="Matcha",
             note="nope",
         )
+
+
+def test_add_child_replaces_demo_acceptance_and_sets_parent(root: Path) -> None:
+    """Team children must not keep Demo pytest acceptance; parent_task_id is top-level."""
+    create_team(root=root, team_id="demo-t1", title="Dual", force=True)
+    _team, child = add_child_task(
+        root=root,
+        team_id="demo-t1",
+        task_id="t1-eng",
+        title="Eng package",
+        force=True,
+        parent_task_id="parent-biz-001",
+    )
+    assert child.get("parent_task_id") == "parent-biz-001"
+    assert "parent_task_id" not in (child.get("team") or {})
+    acc = child["acceptance"]
+    assert len(acc) == 1
+    assert acc[0]["must_run"] is False
+    assert "Eng" in acc[0]["description"] or "拆解" in acc[0]["description"]
+    # Must not still be the Demo filter pytest default
+    assert "demo-app" not in acc[0].get("command", "")
+    assert "pytest" not in acc[0].get("command", "")
+    assert "4 Eng full implementation" not in str(child.get("scope", {}))
+    assert validate_task(child) == []

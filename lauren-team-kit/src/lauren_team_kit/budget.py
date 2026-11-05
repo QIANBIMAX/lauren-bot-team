@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 from datetime import datetime, timezone
 from typing import Any
 
@@ -216,6 +218,9 @@ def transition_with_budget(
     actor: str,
     note: str | None = None,
     auto_block: bool = True,
+    role: str | None = None,
+    profile: str | None = None,
+    root: Path | str | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any] | None]:
     """transition_task with L4 gates on entry to 执行中.
 
@@ -249,7 +254,7 @@ def transition_with_budget(
                 "budget": report.get("budget"),
             }
 
-        updated = transition_task(task, to_status=to_status, actor=actor, note=note)
+        updated = transition_task(task, to_status=to_status, actor=actor, note=note, role=role, profile=profile, root=root)
         raw = updated.get("budget")
         if isinstance(raw, dict) and any(
             k in raw for k in ("max_attempts", "max_duration_sec", "max_tokens")
@@ -264,5 +269,5 @@ def transition_with_budget(
         ok_rep["action"] = "ok"
         return updated, ok_rep
 
-    updated = transition_task(task, to_status=to_status, actor=actor, note=note)
+    updated = transition_task(task, to_status=to_status, actor=actor, note=note, role=role, profile=profile, root=root)
     return updated, {"ok": True, "action": "ok", "violations": []}

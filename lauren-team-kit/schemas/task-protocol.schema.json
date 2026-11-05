@@ -216,6 +216,18 @@
               "type": "string"
             }
           }
+        },
+        "set_by": {
+          "type": "string"
+        },
+        "set_role": {
+          "type": "string"
+        },
+        "set_at": {
+          "type": "string"
+        },
+        "trust": {
+          "type": "string"
         }
       }
     },
@@ -270,9 +282,56 @@
               },
               "notes": {
                 "type": "string"
+              },
+              "trust": {
+                "type": "string"
+              },
+              "round_id": {
+                "type": "string"
+              },
+              "recorded_by": {
+                "type": "string"
+              },
+              "recorded_role": {
+                "type": "string"
+              },
+              "result": {
+                "type": "string",
+                "enum": [
+                  "pass",
+                  "fail",
+                  "inconclusive"
+                ]
               }
             }
           }
+        },
+        "round_id": {
+          "type": "string",
+          "description": "T1 verification round id"
+        },
+        "trust": {
+          "type": "string",
+          "enum": [
+            "verified_run",
+            "diagnostic",
+            "imported_evidence"
+          ]
+        },
+        "verifier": {
+          "type": "string"
+        },
+        "archived_checks": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "diagnostic_result": {
+          "type": "string"
+        },
+        "diagnostic_bound_commit": {
+          "type": "string"
         }
       }
     },
@@ -317,7 +376,7 @@
     },
     "merge": {
       "type": "object",
-      "additionalProperties": false,
+      "additionalProperties": true,
       "properties": {
         "attempted_at": {
           "type": "string"
@@ -332,6 +391,60 @@
         },
         "notes": {
           "type": "string"
+        },
+        "already_merged": {
+          "type": "boolean"
+        },
+        "already_in_integration": {
+          "type": "boolean"
+        },
+        "integration_before": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "integration_after": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "bound": {
+          "type": "string"
+        },
+        "method": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        },
+        "report_path": {
+          "type": "string"
+        },
+        "post_check": {
+          "type": "object"
+        },
+        "acceptance_ok": {
+          "type": "boolean"
+        },
+        "acceptance_errors": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "conflict": {
+          "type": "boolean"
+        },
+        "error": {
+          "type": "string"
+        },
+        "orig_branch": {
+          "type": [
+            "string",
+            "null"
+          ]
         }
       }
     },
@@ -360,6 +473,10 @@
           },
           "note": {
             "type": "string"
+          },
+          "role": {
+            "type": "string",
+            "description": "T1 authorized role at transition"
           }
         }
       }
@@ -431,7 +548,7 @@
     "team": {
       "type": "object",
       "additionalProperties": false,
-      "description": "Team optional link: child task under a team run",
+      "description": "Team optional link: child task under a team run. Allowed keys: team_id, role, assignee, assigned_by, assigned_at. Do NOT put parent_task_id here.",
       "properties": {
         "team_id": {
           "type": "string",
@@ -457,7 +574,7 @@
     },
     "parent_task_id": {
       "type": "string",
-      "description": "Optional parent task id for hierarchy; Team children usually omit and use team.team_id"
+      "description": "Optional TOP-LEVEL parent task id for hierarchy (e.g. Eng handoff to developer). MUST NOT be nested under team (team.additionalProperties=false). Distinct from team.team_id."
     }
   },
   "allOf": [
