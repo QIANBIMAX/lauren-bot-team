@@ -1468,6 +1468,20 @@ def cmd_run_acceptance(args: argparse.Namespace) -> int:
     return 0 if summary.get("ok") else 1
 
 
+def cmd_scenario(args: argparse.Namespace) -> int:
+    """Windows and POSIX entry for the shared Python scenario runner."""
+    from lauren_team_kit.scenarios import main as scenario_main
+
+    argv = [args.name, "--root", args.root]
+    if args.task_id:
+        argv.extend(["--task-id", args.task_id])
+    if args.team_id:
+        argv.extend(["--team-id", args.team_id])
+    if args.force:
+        argv.append("--force")
+    return scenario_main(argv)
+
+
 def cmd_doctor(args: argparse.Namespace) -> int:
     """Print a machine-readable environment report. Does not mutate git or raise privileges."""
     report = collect_report(root=getattr(args, "root", None))
@@ -1493,6 +1507,17 @@ def build_parser() -> argparse.ArgumentParser:
         help="额外检查该交付根是否可写",
     )
     p_doc.set_defaults(func=cmd_doctor)
+
+    p_sc = sub.add_parser(
+        "scenario",
+        help="运行 C/T Python 场景（默认不 --force 覆盖已有演示）",
+    )
+    p_sc.add_argument("name", choices=["c1", "c2", "c3", "c6", "c7", "c8", "t1", "t2", "t3", "t4"])
+    p_sc.add_argument("--root", required=True)
+    p_sc.add_argument("--task-id", default=None)
+    p_sc.add_argument("--team-id", default=None)
+    p_sc.add_argument("--force", action="store_true")
+    p_sc.set_defaults(func=cmd_scenario)
 
     p_create = sub.add_parser("create", help="创建任务 JSON + 证据目录")
     p_create.add_argument("--title", required=True)

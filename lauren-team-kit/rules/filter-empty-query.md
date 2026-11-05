@@ -11,10 +11,43 @@
 
 ## 验收探针
 
+requires_bash: true
+
 ```bash
 DEMO_FILTER_IMPL=fixed python -m demo_app filter --query "" | grep -q '\[\]'
 PYTHONPATH=src python -c "from demo_app.filter import filter_tasks; assert filter_tasks([], query='') == []"
 PYTHONPATH=src python -m pytest -q tests/test_filter_empty_query.py
+```
+
+Bash 探针只在 POSIX bash 可用时执行。Windows 不把 Git Bash 当成已支持；不能跑时结果是 cannot_run，不是 pass。默认验收走下面的结构化探针。
+
+## 结构化探针
+
+```json
+{
+  "requires_bash": false,
+  "probes": [
+    {
+      "id": "cli-empty",
+      "argv": ["{python}", "-m", "demo_app", "filter", "--query", ""],
+      "env": {"PYTHONPATH": "{pythonpath}", "DEMO_FILTER_IMPL": "{impl}"},
+      "expect_exit": 0,
+      "expect_stdout_contains": "[]"
+    },
+    {
+      "id": "lib-empty",
+      "argv": ["{python}", "-c", "import importlib, os; name = 'demo_app.filter_buggy' if os.environ.get('DEMO_FILTER_IMPL') == 'buggy' else 'demo_app.filter'; mod = importlib.import_module(name); assert mod.filter_tasks([], query='') == []"],
+      "env": {"PYTHONPATH": "{pythonpath}", "DEMO_FILTER_IMPL": "{impl}"},
+      "expect_exit": 0
+    },
+    {
+      "id": "pytest-empty",
+      "argv": ["{python}", "-m", "pytest", "-q", "tests/test_filter_empty_query.py"],
+      "env": {"PYTHONPATH": "{pythonpath}", "DEMO_FILTER_IMPL": "{impl}"},
+      "expect_exit": 0
+    }
+  ]
+}
 ```
 
 ## 回流落点
