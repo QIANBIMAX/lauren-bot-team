@@ -26,14 +26,17 @@ _WORKBENCH_HINT = (
 )
 _LOCK_HINT_PRESENT = (
     "本解释器可导入 fcntl.flock（POSIX 建议锁）。"
-    "这不是 Windows 锁验收。完整 W3（占用重试、仓库级集成锁、路径身份）仍未做。"
+    "W3：同一把锁覆盖读改写；替换遇占用会有界重试且不截断原文件；"
+    "合并锁按 git common-dir 共享，不删除锁文件抢占。"
+    "这不是 Windows 锁验收，也不是 Windows 11 桌面验收。"
 )
 _LOCK_HINT_MSVCRT = (
     "本解释器没有 fcntl。Windows 读改写使用标准库 msvcrt.locking，不是 no-op。"
-    "完整 W3（占用重试、仓库级集成锁、路径身份）仍未做。"
+    "W3：同一把锁覆盖读改写；替换遇占用会有界重试且不截断原文件；"
+    "合并锁按 git common-dir 共享。Job Object 取消树仍未做。"
 )
 _LOCK_HINT_ABSENT = (
-    "当前解释器没有可用文件锁。不能把缺失锁当成已互斥。完整 W3 未做。"
+    "当前解释器没有可用文件锁。不能把缺失锁当成已互斥。W3 锁在此解释器上不可用。"
 )
 
 
@@ -41,7 +44,7 @@ def collect_report(*, root: Path | str | None = None) -> dict[str, Any]:
     """Collect one doctor report. ``root`` is an optional delivery root to write-test."""
     py = _probe_python()
     package = _probe_package()
-    git = _probe_git()
+    git = _probe_git(root)
     writable = _probe_writable_dirs(root)
     lock = _probe_lock()
     utf8 = _probe_subprocess_utf8()
@@ -137,43 +140,11 @@ def _probe_package() -> dict[str, Any]:
     }
 
 
-def _probe_git() -> dict[str, Any]:
-    git = shutil.which("git")
-    base: dict[str, Any] = {
-        "present": False,
-        "required": True,
-        "path": git,
-        "version": None,
-        "merge_tree_write_tree": False,
-        "hint": "未找到 git。请按平台安装 Git；本命令不会写入全局 git config。",
-    }
-    if not git:
-        return base
-    version_run = _run([git, "--version"])
-    help_run = _run([git, "merge-tree", "-h"])
-    version = None
-    if version_run is not None and version_run.stdout:
-        version = version_run.stdout.strip().splitlines()[0]
-    help_text = ""
-    if help_run is not None:
-        help_text = f"{help_run.stdout or ''}\n{help_run.stderr or ''}"
-    write_tree = "--write-tree" in help_text
-    hint = None
-    if version_run is None:
-        hint = "已找到 git 但无法执行 --version。本命令不会修改 git 配置。"
-    elif not write_tree:
-        hint = (
-            "Git 不支持 merge-tree --write-tree（约需 2.38+）。"
-            "请升级 Git；不要用 git config --global 或关闭 TLS 校验来绕过。"
-        )
-    return {
-        "present": version_run is not None,
-        "required": True,
-        "path": git,
-        "version": version,
-        "merge_tree_write_tree": write_tree,
-        "hint": hint,
-    }
+def _probe_git(root: Path | str | None = None) -> dict[str, Any]:
+    """Read-only Git facts. ``git config`` is only used with ``--get``."""
+    from lauren_team_kit.git_diag import read_git_diagnostics
+
+    return read_git_diagnostics(root, runner=_run)
 
 
 def _probe_writable_dirs(root: Path | str | None) -> list[dict[str, Any]]:

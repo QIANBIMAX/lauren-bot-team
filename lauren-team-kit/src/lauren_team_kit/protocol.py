@@ -10,6 +10,7 @@ from typing import Any
 
 from lauren_team_kit import SCHEMA_VERSION
 from lauren_team_kit.atomic_io import atomic_write_json, update_json_file
+from lauren_team_kit.paths import stable_dir_id
 from lauren_team_kit.authz import (
     AuthzError,
     Principal,
@@ -74,7 +75,8 @@ def schema_path() -> Path:
 
 
 def task_path_for(root: Path | str, task_id: str) -> Path:
-    return Path(root).resolve() / "workspace" / "runs" / task_id / "task.json"
+    """Task file under the stable directory id, not the raw external id."""
+    return Path(root).resolve() / "workspace" / "runs" / stable_dir_id(task_id) / "task.json"
 
 
 def load_task(path: Path | str) -> dict[str, Any]:
@@ -294,8 +296,8 @@ def create_task(
             }
         ],
         "worktree": {
-            "path": f"workspace/runs/{task_id}/worktree",
-            "branch": f"task/{task_id}",
+            "path": f"workspace/runs/{stable_dir_id(task_id)}/worktree",
+            "branch": f"task/{stable_dir_id(task_id)}",
         },
         "integration": {"branch": "demo/integration"},
         "merge_policy": {"mode": "confirm"},

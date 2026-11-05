@@ -105,13 +105,20 @@ def test_git_probe_does_not_rewrite_config(monkeypatch) -> None:
     collect_report()
     git_calls = [cmd for cmd in calls if cmd and Path(cmd[0]).name.startswith("git")]
     assert git_calls, "doctor should probe git"
+    saw_config_read = False
     for cmd in git_calls:
-        assert "config" not in cmd
         assert "--system" not in cmd
         assert "--global" not in cmd
         joined = " ".join(cmd).lower()
         assert "sslverify" not in joined
         assert "http.sslverify" not in joined
+        if "config" in cmd:
+            saw_config_read = True
+            assert "--get" in cmd or "--get-all" in cmd
+            assert "--unset" not in cmd
+            assert "--replace-all" not in cmd
+            assert "--add" not in cmd
+    assert saw_config_read, "doctor should read autocrlf / safe.directory without writing"
 
 
 def test_doctor_source_does_not_disable_tls() -> None:
