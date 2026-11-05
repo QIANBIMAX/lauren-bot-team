@@ -4,7 +4,7 @@ id: lauren-lite
 release: 0.1.0
 name: Lauren Lite
 tagline: Scope, implement, and verify with a three-role crew — no fake passes.
-summary: Lite triangle for OpenMausBot — 幕僚长 (Chief of Staff), 开发助手 (Developer), 验证助手 (Verifier) — with must_run hard gates and confirm-before-local-merge.
+summary: Lite triangle for OpenMausBot — 幕僚长 (Chief of Staff), 云端编程助手 (Developer), 验证助手 (Verifier) — with must_run hard gates and confirm-before-local-merge.
 category: Engineering
 author:
   name: QIANBIMAX
@@ -42,8 +42,8 @@ agents:
     playbooks:
       - scoped-verify
   - key: developer
-    name: 开发助手
-    title: 开发助手
+    name: 云端编程助手
+    title: 云端编程助手
     description: Implement only in worktree; self-check; submit artifact.commit. Hard ban — no integration merge; no flipping must_run; no editing verifier evidence.
     appearance:
       color: green
@@ -122,7 +122,7 @@ A Lite three-role Lauren crew for OpenMausBot that scopes work, implements in an
 
 统一入口；签发协议；推进状态；确认后请求本地合并。硬禁止：用自检冒充验证、擅自抬预算、未跑 must_run 写通过。
 
-### 开发助手 — Developer
+### 云端编程助手 — Developer
 
 **Role key:** `developer`
 

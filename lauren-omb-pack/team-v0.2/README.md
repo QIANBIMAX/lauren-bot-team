@@ -1,8 +1,8 @@
 # Team v0.2 扩展包（可导入）
 
-**不是**一期 M0 三角包的一部分。Lite 默认仍是根目录 `lauren-omb-pack/` 的幕僚长 / 开发助手 / 验证助手。
+**不是**一期 M0 三角包的一部分。Lite 默认仍是根目录 `lauren-omb-pack/` 的幕僚长 / 云端编程助手 / 验证助手。
 
-本目录提供 **Team 版一次导入** 材料（三角色 + Nancy / Matcha / Eng stub），配合 `lauren-team-kit` 的 Team API。
+本目录提供 **Team 版一次导入** 材料（三角色 + Nancy私人助理 / 工程主管Matcha / 工程bot①② stub），配合 `lauren-team-kit` 的 Team API。显示名对照 Lauren 组织图。
 
 ## 陌生人怎么用（主路径）
 
@@ -32,7 +32,7 @@ cd lauren-bot-team
 
 - **Skills 默认关**；**routines 保持暂停**——须你手动启用。
 - **包内不含任何密钥 / API Key**。
-- Nancy **只汇总**；Matcha **只调度**；验证 / 合并仍走 **验证助手 + 幕僚长**；Eng-A/B 本期 **stub**。
+- **Nancy私人助理**做日常协调与进度汇总；**工程主管Matcha**只调度；验证 / 合并仍走 **验证助手 + 幕僚长**；**工程bot①/②** 本期 **stub**（③④未建）。
 - **诚实声明：Mac 0.1.140 真机 GUI 导入验收尚未跑通**，不要对外宣称「已实测导入成功」。
 
 ## 终端验收（不依赖 OMB GUI）
@@ -44,18 +44,18 @@ cd lauren-bot-team
 bash lauren-team-kit/scripts/t1_dual_task_smoke.sh
 ```
 
-期望退出码 0，并看到双任务烟雾成功字样（见 [`docs/runs/demo-t1.md`](../../docs/runs/demo-t1.md)）。
+期望退出码 0，并看到双任务烟雾成功字样（见 [`docs/runs/demo-t1.md`](../../docs/runs/demo-t1.md)）。CLI 仍用技术名 `Nancy` / `Matcha` / `Eng-A` / `Eng-B`。
 
 ## 角色边界（摘要）
 
-| 角色 | 可做 | 不可做 |
+| 显示名 | 可做 | 不可做 |
 |---|---|---|
-| 幕僚长 | 范围、协议、状态、合并请求 | 未跑检查写通过；擅自抬预算 |
+| 幕僚长 | 只派活、给背景、盯质量；范围、协议、状态、合并请求 | 亲自干重活；未跑检查写通过；擅自抬预算 |
 | 开发助手 | 指定工作区改码与自检 | 直接合并；改 must_run；改验证证据 |
 | 验证助手 | 真跑 must_run、留证 | 未跑写 pass |
-| Nancy | 汇总进度、升级阻塞 | 写码、标验证通过、merge |
-| Matcha | 指派/跟踪 Eng stub | 输出代码字段、标验证通过 |
-| Eng-A/B | 占位确认 | 宣称 Full Eng 已交付 |
+| Nancy私人助理 | 日常协调、汇总进度、升级阻塞 | 写码、标验证通过、merge |
+| 工程主管Matcha | 排任务、指派/跟踪工程bot stub | 亲自干重活；输出代码字段、标验证通过 |
+| 工程bot①/② | 占位确认 | 宣称 Full Eng 已交付 |
 
 ## 相关
 

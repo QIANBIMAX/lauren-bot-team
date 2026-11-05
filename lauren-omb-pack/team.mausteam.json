@@ -17,8 +17,8 @@
       },
       {
         "key": "developer",
-        "name": "开发助手",
-        "title": "开发助手",
+        "name": "云端编程助手",
+        "title": "云端编程助手",
         "description": "Implement in worktree; self-check; artifact.commit. Hard ban: no integration merge; no flipping must_run.",
         "appearance": {
           "color": "green",

@@ -3,13 +3,13 @@
   "version": 1,
   "team": {
     "name": "Lauren Team v0.2",
-    "description": "Team edition: chief/developer/verifier + Nancy (progress) + Matcha (schedule) + Eng stubs. Nancy only summarizes; Matcha only schedules; verification/merge via verifier+chief; Eng are stubs; no fake pass; routines paused; no secrets in pack.",
+    "description": "Team edition：幕僚长/开发助手/验证助手 + Nancy私人助理 + 工程主管Matcha + 工程bot①② stub。幕僚长只派活盯质量；Nancy私人助理日常协调与进度；工程主管Matcha只调度；验证/合并走验证助手+幕僚长；工程bot本期 stub（③④未建）；未跑不得标通过；例程暂停；包内无密钥。",
     "members": [
       {
         "key": "chief",
         "name": "幕僚长",
         "title": "幕僚长",
-        "description": "Unified entry; issue task.json; advance status; request Demo local merge after precheck. Hard ban: no fake verification pass; no solo budget raise; no claim of OMB GUI verified without evidence.",
+        "description": "只派活、给背景、盯质量，不亲自干重活。签发 task.json；推进状态；合并预检后请求 Demo 本地合并。硬禁：未跑检查写通过；擅自抬预算；无证据宣称 OMB GUI 已验收。",
         "appearance": {
           "color": "purple",
           "mascotExpression": "focused"
@@ -17,8 +17,8 @@
       },
       {
         "key": "developer",
-        "name": "开发助手",
-        "title": "开发助手",
+        "name": "云端编程助手",
+        "title": "云端编程助手",
         "description": "Implement in worktree; self-check; submit artifact.commit. Hard ban: no integration merge; no flipping must_run; no editing verifier evidence.",
         "appearance": {
           "color": "green",
@@ -37,9 +37,9 @@
       },
       {
         "key": "nancy",
-        "name": "Nancy",
-        "title": "Nancy",
-        "description": "Progress summary only. Hard ban: no verification.result=pass; no artifact.commit; no code patches; no merge; no budget raise.",
+        "name": "Nancy私人助理",
+        "title": "Nancy私人助理",
+        "description": "日常协调、待办/日程/进度，减轻主人负担（本期侧重进度汇总）。硬禁：不写 verification.result=pass、不写 artifact.commit、不写码、不 merge、不抬预算。",
         "appearance": {
           "color": "cyan",
           "mascotExpression": "happy"
@@ -47,9 +47,9 @@
       },
       {
         "key": "matcha",
-        "name": "Matcha",
-        "title": "Matcha",
-        "description": "Schedule and assign Eng stubs. Hard ban: no artifact.*; no code; no verification pass; no auto-push; no fake OMB GUI acceptance.",
+        "name": "工程主管Matcha",
+        "title": "工程主管Matcha",
+        "description": "管工程线、排任务指派工程bot，不亲自干重活。硬禁：无 artifact.*、无业务代码、无验证通过、无自动 push、无伪造 OMB GUI 验收。",
         "appearance": {
           "color": "blue",
           "mascotExpression": "focused"
@@ -57,9 +57,9 @@
       },
       {
         "key": "eng-a",
-        "name": "Eng-A",
-        "title": "Eng-A",
-        "description": "Stub only. Status notes after assign. Hard ban: no artifact; no verification pass; no Full Eng claim.",
+        "name": "工程bot①",
+        "title": "工程bot①",
+        "description": "本期 stub（图：工程 bot ①）。指派后只报状态。硬禁：无 artifact、无验证通过、不宣称 Full Eng。",
         "appearance": {
           "color": "gray",
           "mascotExpression": "thinking"
@@ -67,9 +67,9 @@
       },
       {
         "key": "eng-b",
-        "name": "Eng-B",
-        "title": "Eng-B",
-        "description": "Stub only. Status notes after assign. Hard ban: no artifact; no verification pass; no Full Eng claim.",
+        "name": "工程bot②",
+        "title": "工程bot②",
+        "description": "本期 stub（图：工程 bot ②；③④先不建）。指派后只报状态。硬禁：无 artifact、无验证通过、不宣称 Full Eng。",
         "appearance": {
           "color": "gray",
           "mascotExpression": "thinking"
@@ -78,7 +78,7 @@
     ],
     "room": {
       "name": "Lauren Team Room",
-      "bulletin": "Nancy only summarizes. Matcha only schedules. Verification and merge via verifier+chief. Eng-A/Eng-B are stubs this release. Never mark pass for checks not run. Routines paused until enabled. No secrets in pack.",
+      "bulletin": "Nancy私人助理做日常协调与进度汇总。工程主管Matcha只调度。验证与合并走验证助手+幕僚长。工程bot①/②本期 stub（③④未建）。未跑检查不得标通过。例程暂停。包内无密钥。",
       "defaultResponder": {
         "kind": "member",
         "member": "chief"

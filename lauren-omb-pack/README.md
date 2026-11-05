@@ -11,12 +11,12 @@ OpenMausBot **可导入**团队包（数据/配置，非 OMB 源码）。
 
 ## 两套导入物
 
-| 版本 | BotMRR（优先） | 旧格式兼容 | 角色 |
+| 版本 | BotMRR（优先） | 旧格式兼容 | 角色（侧栏显示名） |
 |---|---|---|---|
-| **Lite（默认三角）** | [`lauren-lite.botmrr.md`](lauren-lite.botmrr.md) | [`team.mausteam.json`](team.mausteam.json) | 幕僚长 / 开发助手 / 验证助手 |
-| **Team v0.2（扩展）** | [`team-v0.2/lauren-team-v0.2.botmrr.md`](team-v0.2/lauren-team-v0.2.botmrr.md) | [`team-v0.2/team.mausteam.json`](team-v0.2/team.mausteam.json) | 上表三角 + Nancy / Matcha / Eng stub |
+| **Lite（默认三角）** | [`lauren-lite.botmrr.md`](lauren-lite.botmrr.md) | [`team.mausteam.json`](team.mausteam.json) | 幕僚长 / 云端编程助手 / 验证助手 |
+| **Team v0.2（扩展）** | [`team-v0.2/lauren-team-v0.2.botmrr.md`](team-v0.2/lauren-team-v0.2.botmrr.md) | [`team-v0.2/team.mausteam.json`](team-v0.2/team.mausteam.json) | 上表三角 + **Nancy私人助理** / **工程主管Matcha** / **工程bot①②**（stub） |
 
-Team **不是**把一期三角根包改成强制五角色；它是独立扩展切片。详见 [`team-v0.2/README.md`](team-v0.2/README.md)。
+Team **不是**把一期三角根包改成强制七角色；它是独立扩展切片。详见 [`team-v0.2/README.md`](team-v0.2/README.md)。
 
 ## 建议导入步骤（摘要）
 
@@ -36,7 +36,7 @@ Team **不是**把一期三角根包改成强制五角色；它是独立扩展�
 | `bots/developer.instructions.md` | 开发助手 |
 | `bots/verifier.instructions.md` | 验证助手 |
 
-Team 角色说明在 `team-v0.2/bots/`。Group 参考 `groups/lauren-core.md` / `team-v0.2/groups/`。
+Team 角色说明在 `team-v0.2/bots/`（Nancy私人助理 / 工程主管Matcha / 工程bot）。Group 参考 `groups/lauren-core.md` / `team-v0.2/groups/`。
 
 ## 清单
 

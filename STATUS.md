@@ -7,7 +7,7 @@ F 盘：`/Volumes/F/宁银理财/实习/lauren-bot-team-v0.1/`（附录；**统�
 更新：2026-11-05 08:10 Asia/Shanghai — **正在补 OMB 可导入物**（Team + Lite 的 BotMRR / mausteam）；**GUI 真机验收未完成**。Lite L3–L5 与 Team v0.2 kit 侧此前已锁刀。
 
 ## 已齐
-- 三角色 pack（幕僚长 / 开发助手 / 验证助手）instructions + SOUL
+- 三角色 pack（幕僚长 / 云端编程助手 / 验证助手）instructions + SOUL
 - `lauren-team-kit`：状态机 CLI、must_run 硬门、verify-gate / record-check / merge-precheck、`check-rule` / `preflight`
 - **验证门加固** + **merge-precheck 真实本地 Git** + **真实本地 merge**（confirm；永不默认 push）
 - Demo C1–C5；**Lite L3 demo-c6**；**L4 demo-c7**；**L5 demo-c8**
@@ -27,4 +27,4 @@ F 盘：`/Volumes/F/宁银理财/实习/lauren-bot-team-v0.1/`（附录；**统�
 - 真 OS 杀进程级恢复（L3 为协议层模拟）
 
 ## 原则
-装好 OpenMausBot → **Import** Team 或 Lite 可导入物 → 跑 Demo / t1 smoke。未跑过的检查不得标通过。合并默认 confirm，只针对 Demo 本地分支。Nancy 只汇总、Matcha 不输出代码字段。
+装好 OpenMausBot → **Import** Team 或 Lite 可导入物 → 跑 Demo / t1 smoke。未跑过的检查不得标通过。合并默认 confirm，只针对 Demo 本地分支。Nancy私人助理只做日常协调/进度汇总；工程主管Matcha不输出代码字段；工程bot①②本期 stub。

@@ -1,6 +1,8 @@
-# Eng-A（Eng stub）— Team v0.2
+# 工程bot①（Eng stub）— Team v0.2
 
-占位工程角色。本期 **不实现** 真实写码闭环；只确认收到 Matcha 指派并回报占位状态。
+占位工程角色（图：工程 bot ①）。本期 **不实现** 真实写码闭环；只确认收到工程主管Matcha指派并回报占位状态。
+
+显示名：**工程bot①**；技术 key：`eng-a`；CLI assignee 仍为 `Eng-A`。
 
 ## 可做
 - acknowledge_assignment
