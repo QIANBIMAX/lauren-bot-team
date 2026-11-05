@@ -16,10 +16,10 @@ python3 -m venv .venv
 
 ## CLI
 
-交付根示例：`/workspace/lauren-bot-team-v0.1`。任务落在 `workspace/runs/<task_id>/task.json`。
+交付根示例：`/workspace/lauren-bot-team`。任务落在 `workspace/runs/<task_id>/task.json`。
 
 ```bash
-ROOT=/workspace/lauren-bot-team-v0.1
+ROOT=/workspace/lauren-bot-team
 KIT=lauren-team-kit/.venv/bin/python
 
 $KIT -m lauren_team_kit create \
@@ -58,7 +58,7 @@ $KIT -m lauren_team_kit init-evidence --task-id demo-c1 --root "$ROOT"
 演示：`待验证` 无合格 checks → verify-gate / →验证通过 失败 → `需修改` → 再执行 → record-check → `验证通过`（**不真 merge**）。
 
 ```bash
-ROOT=/workspace/lauren-bot-team-v0.1
+ROOT=/workspace/lauren-bot-team
 bash lauren-team-kit/scripts/c2_kit_rework_smoke.sh
 # 日志：workspace/runs/demo-c2/logs/c2-kit-rework-smoke.log
 # 失败证据：workspace/runs/demo-c2/logs/verify-gate-fail.log
@@ -72,7 +72,7 @@ C3 Demo、OMB 真机导入、真 merge：延后。verify-gate/merge-precheck 已
 ## C3 经验复用（规则探针）
 
 ```bash
-cd /workspace/lauren-bot-team-v0.1
+cd /workspace/lauren-bot-team
 K=lauren-team-kit/.venv/bin/python
 $K -m lauren_team_kit check-rule --rule lauren-team-kit/rules/filter-empty-query.md --against demo-app             # PASS exit 0
 $K -m lauren_team_kit check-rule --rule lauren-team-kit/rules/filter-empty-query.md --against demo-app --impl buggy # FAIL exit 1

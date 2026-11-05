@@ -9,7 +9,7 @@
 ## 怎么跑
 
 ```bash
-cd /path/to/lauren-bot-team-v0.1
+cd /path/to/lauren-bot-team
 bash lauren-team-kit/scripts/t1_dual_task_smoke.sh
 ```
 

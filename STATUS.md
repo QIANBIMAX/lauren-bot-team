@@ -1,8 +1,8 @@
-# lauren-bot-team v0.1 进度（2026-11-05 09:02 Asia/Shanghai）
+# lauren-bot-team v0.1 进度（2026-11-05 10:20 Asia/Shanghai）
 
 公开仓：https://github.com/QIANBIMAX/lauren-bot-team.git（主路径 = clone → OMB Import）  
 
-更新：2026-11-05 09:02 Asia/Shanghai — **Lite / Team 包装为两条平行产品线**；Team 导入文件改名为 `lauren-team.botmrr.md`（去掉文件名版本号）；文档强调 **优先幕僚长单聊**（群可选、更耗 token）。**GUI 真机验收未完成**。Full 为未来第三条线。
+更新：2026-11-05 10:20 Asia/Shanghai — Nancy 能力补强（进度整本 / 待办 / routines 钩子默认暂停 / 减负协议）；幕僚长转交条款已对齐。此前：Lite / Team 平行产品线；**GUI 真机验收未完成**。Full 为未来第三条线。
 
 ## 已齐
 - 三角色 pack（幕僚长 / 云端编程助手 / 验证助手）instructions + SOUL
@@ -20,8 +20,8 @@
 ## 延后 / 未验收
 - **OMB GUI 真机导入验收**（BotMRR / mausteam 文件已备，验收未跑）
 - Windows / Linux 三平台新人验收
-- **Full 产品线**、四个完整 Eng（本期 Eng 仅为 stub）
+- **Full 产品线**、四个完整写码 Eng（本期 Eng①②做拆解转交、不做业务实现；③④未建）
 - 真 OS 杀进程级恢复（L3 为协议层模拟）
 
 ## 原则
-装好 OpenMausBot → **自选 Import Lite 或 Team** → 日常 **私聊幕僚长** 派活（群可选）→ 跑 Demo / t1 smoke。未跑过的检查不得标通过。合并默认 confirm，只针对 Demo 本地分支。Nancy私人助理只做日常协调/进度汇总；工程主管Matcha不输出代码字段；工程bot①②本期 stub。
+装好 OpenMausBot → **自选 Import Lite 或 Team** → 日常 **私聊幕僚长** 派活（群可选）→ 跑 Demo / t1 smoke。未跑过的检查不得标通过。合并默认 confirm，只针对 Demo 本地分支。Nancy私人助理维护进度整本与待办（减负接单；routines 默认暂停）；工程主管Matcha只调度复杂工程；工程bot①②拆解并转交 developer（不做业务实现）。简单可直派 developer；复杂硬禁直派。

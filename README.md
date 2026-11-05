@@ -10,15 +10,15 @@
 
 Lite 与 Team 是 **平行、对等的两套 Import 材料**，互不依赖、也不互为「旁路」。挑一条导入即可；**Full（完整工程线）是未来第三条产品线**，本期未交付。
 
-- Lite：独立导入 3 个角色，适合个人单任务流程。
-- Team：独立导入 7 个角色，包含完整的三角色基础配置以及 Nancy、Matcha、两个工程占位 bot；无需先导入 Lite。
+- Lite：独立导入 3 个角色；**三角直派闭环**（幕僚长 → 云端编程助手 → 验证助手）。
+- Team：独立导入 7 个角色（三角 + Nancy私人助理 + 工程主管Matcha + 工程bot①②）；**按复杂度分流**——简单同 Lite 直派；复杂强制 幕僚长→Matcha→工程bot→云端编程助手→验证助手。无需先导入 Lite。
 - 两条线共用 `lauren-team-kit` 与 Demo。这是共享运行依赖，不是部署先后依赖。更换产品线请勿直接叠加导入，以免重复创建基础角色；已有任务和证据应先保留。
-- 当前 Team 的两个工程 bot 为 stub，GUI 导入和三平台尚未完成验收；独立部署包装不代表完整并行工程能力已经交付。
+- 工程bot①②本期做**子任务拆解并转交 developer**（不做业务实现）；GUI 导入和三平台尚未完成验收；独立部署包装不代表 Full Eng 已交付。
 
 | 产品线 | 适合谁 | BotMRR（优先） | 兼容旧格式 |
 |---|---|---|---|
 | **Lite** | 三角闭环：派活 → 写码 → 验收 | [`lauren-omb-pack/lauren-lite.botmrr.md`](lauren-omb-pack/lauren-lite.botmrr.md) | [`lauren-omb-pack/team.mausteam.json`](lauren-omb-pack/team.mausteam.json) |
-| **Team** | 三角 + 进度协调 + 工程调度（含 stub） | [`lauren-omb-pack/team/lauren-team.botmrr.md`](lauren-omb-pack/team/lauren-team.botmrr.md) | [`lauren-omb-pack/team/team.mausteam.json`](lauren-omb-pack/team/team.mausteam.json) |
+| **Team** | 三角 + 进度协调 + 复杂工程强制中间层（Eng 拆解转交） | [`lauren-omb-pack/team/lauren-team.botmrr.md`](lauren-omb-pack/team/lauren-team.botmrr.md) | [`lauren-omb-pack/team/team.mausteam.json`](lauren-omb-pack/team/team.mausteam.json) |
 
 > Lite 与 Team 的导入文件与目录均使用无版本号命名。Full 尚未交付。
 
@@ -56,9 +56,10 @@ Lite 与 Team 是 **平行、对等的两套 Import 材料**，互不依赖、�
 
 | 显示名 | key | 干什么 |
 |---|---|---|
-| **Nancy私人助理** | `nancy` | 图：Nancy 私人助理 · Coordinator。日常协调、待办/日程/进度，减轻主人负担。本期切片：进度汇总与阻塞升级；**不写验证、不写代码** |
-| **工程主管Matcha** | `matcha` | 图：工程主管 Matcha · Eng Lead。管工程线、排任务指派工程bot，不亲自干重活；**不写验证、不写业务代码** |
-| **工程bot①** / **工程bot②** | `eng-a` / `eng-b` | 图：工程 bot ①②。本期占位 stub，只回状态；**不是** Full Eng ①–④（③④先不建） |
+| **幕僚长**（Team 下） | `chief` | **按复杂度分流** + **减负协议**：简单直派云端编程助手；复杂硬禁直派须交 Matcha；闲杂进度/阻塞转 Nancy |
+| **Nancy私人助理** | `nancy` | 图：Nancy 私人助理 · Coordinator。进度整本 / 待办 / 阻塞汇总；减负接单；routines 默认暂停；**硬禁验证、硬禁代码、不擅自开定时** |
+| **工程主管Matcha** | `matcha` | 图：工程主管 Matcha · Eng Lead。只接复杂工程；排任务指派 Eng；**不写验证、不写业务代码** |
+| **工程bot①** / **工程bot②** | `eng-a` / `eng-b` | 图：工程 bot ①②。**拆解子任务 → 转交云端编程助手**（本期不做业务实现）；**不是** Full Eng ①–④（③④先不建） |
 
 材料：[`lauren-omb-pack/team/`](lauren-omb-pack/team/) · 说明：[`docs/team.md`](docs/team.md)。
 
@@ -91,5 +92,5 @@ Lite 与 Team 是 **平行、对等的两套 Import 材料**，互不依赖、�
 
 - OMB GUI 正式导入 / 委派 / 重启恢复的真机验收
 - Windows / Linux
-- **Full** 产品线（四个完整 Eng / 完整管理面）；Team 切片仅 stub ①②
+- **Full** 产品线（四个完整写码 Eng / 完整管理面）；Team ①②本期拆解转交、不做业务实现；③④未建
 - demo-c4 在 Demo 集成分支上的真实合并（需先 `init-integration`）

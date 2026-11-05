@@ -3,13 +3,13 @@
   "version": 1,
   "team": {
     "name": "Lauren Team",
-    "description": "Team edition：幕僚长/开发助手/验证助手 + Nancy私人助理 + 工程主管Matcha + 工程bot①② stub。幕僚长只派活盯质量；Nancy私人助理日常协调与进度；工程主管Matcha只调度；验证/合并走验证助手+幕僚长；工程bot本期 stub（③④未建）；未跑不得标通过；例程暂停；包内无密钥。",
+    "description": "Team edition：按复杂度分流。简单：幕僚长→云端编程助手→验证助手；复杂强制：幕僚长→工程主管Matcha→工程bot→云端编程助手→验证助手。Nancy私人助理维护进度整本与待办、接减负转交（催进度/列阻塞/复述状态）；routines 默认暂停、不擅自开定时；硬禁验证与代码。工程bot①②拆解并转交 developer（本期不做业务实现；③④未建）。未跑不得标通过；例程暂停；包内无密钥。",
     "members": [
       {
         "key": "chief",
         "name": "幕僚长",
         "title": "幕僚长",
-        "description": "只派活、给背景、盯质量，不亲自干重活。签发 task.json；推进状态；合并预检后请求 Demo 本地合并。硬禁：未跑检查写通过；擅自抬预算；无证据宣称 OMB GUI 已验收。",
+        "description": "按复杂度分流：简单直派云端编程助手；复杂硬禁直派，须 team-create 后交 Matcha 完整链路。减负协议：闲杂催进度/列阻塞/复述状态转 Nancy；工程派活仍 Matcha。签发 task.json；推进状态；合并预检后请求 Demo 本地合并。硬禁：复杂直派 developer；未跑检查写通过；擅自抬预算；无证据宣称 OMB GUI 已验收。",
         "appearance": {
           "color": "purple",
           "mascotExpression": "focused"
@@ -39,7 +39,7 @@
         "key": "nancy",
         "name": "Nancy私人助理",
         "title": "Nancy私人助理",
-        "description": "日常协调、待办/日程/进度，减轻主人负担（本期侧重进度汇总）。硬禁：不写 verification.result=pass、不写 artifact.commit、不写码、不 merge、不抬预算。",
+        "description": "进度整本（状态/负责人/阻塞）+ 待办勾销/升级；接幕僚长减负转交；team-status / team-summarize。陛下问进度先找她。routines 默认暂停，仅陛下明确要求后协助启用。硬禁：不写 verification.result=pass、不写 artifact.commit、不写码、不 merge、不抬预算、不擅自开定时、不代替 Matcha 派活。",
         "appearance": {
           "color": "cyan",
           "mascotExpression": "happy"
@@ -49,7 +49,7 @@
         "key": "matcha",
         "name": "工程主管Matcha",
         "title": "工程主管Matcha",
-        "description": "管工程线、排任务指派工程bot，不亲自干重活。硬禁：无 artifact.*、无业务代码、无验证通过、无自动 push、无伪造 OMB GUI 验收。",
+        "description": "只接复杂工程；team-add-task / team-assign 指派工程bot；跟踪拆解→转交 developer。简单误派则退回幕僚长。硬禁：无 artifact.*、无业务代码、无验证通过、无自动 push、无伪造 OMB GUI 验收。",
         "appearance": {
           "color": "blue",
           "mascotExpression": "focused"
@@ -59,7 +59,7 @@
         "key": "eng-a",
         "name": "工程bot①",
         "title": "工程bot①",
-        "description": "本期 stub（图：工程 bot ①）。指派后只报状态。硬禁：无 artifact、无验证通过、不宣称 Full Eng。",
+        "description": "复杂中间层（图：工程 bot ①）。必须子任务拆解（目标/范围/验收/worktree）再转交云端编程助手；可用 team-eng-note。本期不做业务实现。硬禁：无 artifact、无验证通过、不宣称 Full Eng。",
         "appearance": {
           "color": "gray",
           "mascotExpression": "thinking"
@@ -69,7 +69,7 @@
         "key": "eng-b",
         "name": "工程bot②",
         "title": "工程bot②",
-        "description": "本期 stub（图：工程 bot ②；③④先不建）。指派后只报状态。硬禁：无 artifact、无验证通过、不宣称 Full Eng。",
+        "description": "复杂中间层（图：工程 bot ②；③④先不建）。必须子任务拆解再转交云端编程助手；可用 team-eng-note。本期不做业务实现。硬禁：无 artifact、无验证通过、不宣称 Full Eng。",
         "appearance": {
           "color": "gray",
           "mascotExpression": "thinking"
@@ -78,7 +78,7 @@
     ],
     "room": {
       "name": "Lauren Team Room",
-      "bulletin": "Nancy私人助理做日常协调与进度汇总。工程主管Matcha只调度。验证与合并走验证助手+幕僚长。工程bot①/②本期 stub（③④未建）。未跑检查不得标通过。例程暂停。包内无密钥。",
+      "bulletin": "按复杂度分流：简单直派云端编程助手；复杂强制 幕僚长→Matcha→工程bot→云端编程助手→验证助手。减负：催进度/列阻塞/复述状态转 Nancy私人助理（进度整本+待办）。工程主管Matcha只调度复杂工程。工程bot①/②拆解并转交 developer（不做业务实现；③④未建）。未跑检查不得标通过。例程默认暂停。包内无密钥。",
       "defaultResponder": {
         "kind": "member",
         "member": "chief"

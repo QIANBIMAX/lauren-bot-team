@@ -16,9 +16,11 @@ Lite 与 Team **对等、独立**：选一条 Import，不要当成「先 Lite �
 | 产品线 | BotMRR（优先） | 旧格式兼容 | 角色（侧栏显示名） |
 |---|---|---|---|
 | **Lite** | [`lauren-lite.botmrr.md`](lauren-lite.botmrr.md) | [`team.mausteam.json`](team.mausteam.json) | 幕僚长 / 云端编程助手 / 验证助手 |
-| **Team** | [`team/lauren-team.botmrr.md`](team/lauren-team.botmrr.md) | [`team/team.mausteam.json`](team/team.mausteam.json) | 上表三角 + **Nancy私人助理** / **工程主管Matcha** / **工程bot①②**（stub） |
+| **Team** | [`team/lauren-team.botmrr.md`](team/lauren-team.botmrr.md) | [`team/team.mausteam.json`](team/team.mausteam.json) | 上表三角 + **Nancy私人助理** / **工程主管Matcha** / **工程bot①②**（复杂强制中间层：Eng 拆解→转交 developer） |
 
 Team 使用无版本号目录与导入文件。详见 [团队说明](team/README.md)。
+
+**分流摘要：** Lite = 三角直派闭环。Team = 简单同 Lite；复杂强制 幕僚长→Matcha→工程bot→云端编程助手→验证助手。Eng 本期拆解并转交 developer，不做业务实现。Team 另有**减负协议**：催进度/列阻塞/复述状态转 Nancy（进度整本+待办）；routines 默认暂停。
 
 ### 联系方式（省 token）
 
