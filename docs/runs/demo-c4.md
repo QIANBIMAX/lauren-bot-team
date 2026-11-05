@@ -1,7 +1,9 @@
 # demo-c4 运行归档
 
+公开归档中的个人路径已替换为 PROJECT_ROOT，不改变检查结论。
+
 归档时间：2026-11-04（Asia/Shanghai）  
-证据根：`workspace/runs/demo-c4/`（自 Mac/F 盘实际运行环境拷贝；本报告不补写未观察事实）
+证据根：`workspace/runs/demo-c4/`（自 原始 macOS 运行环境拷贝；本报告不补写未观察事实）
 
 ## 一句话结论
 
@@ -19,7 +21,7 @@
 | OpenMausBot | 0.1.140 | 同上 |
 | Codex CLI | 0.151.0 | 同上 |
 | 引擎/模型具体名 | **缺失**（证据未写清） | — |
-| 项目根（运行时） | `/Volumes/F/宁银理财/实习/lauren-bot-team-v0.1` | verifier checks 的 `cwd` |
+| 项目根（运行时） | `${PROJECT_ROOT}` | verifier checks 的 `cwd` |
 
 ## 用户输入 / 目标
 
@@ -49,7 +51,7 @@
 | 集成分支配置 | `integration.branch = demo/integration` |
 | 合并策略 | `merge_policy.mode = confirm` |
 
-归档包内 `worktree/` 仅含 `hello.txt`（内容 `ping`），**不含完整 `.git`**。完整 git 历史在 F 盘原 worktree；本归档以 JSON/日志为准。
+归档包内 `worktree/` 仅含 `hello.txt`（内容 `ping`），**不含完整 `.git`**。完整 git 历史在 原始运行工作区；本归档以 JSON/日志为准。
 
 commit 说明（`demo-c4-commit-stat.txt`）：
 
@@ -96,7 +98,7 @@ history 中「待验证 → 验证通过」与「验证通过 → 待合并」�
 ## 未完成项
 
 1. **真实 merge**：尚未执行合入 `demo/integration`。
-2. **`demo/integration` 基线**：F 盘原仓库当时 worktree 仅有 `main` @ `96e054c` 与 `task/demo-c4` @ `6f21756`，**尚无** `demo/integration` 分支（需 `lauren-team-kit init-integration` 从明确基线创建后再 `merge --confirm`）。
+2. **`demo/integration` 基线**：原始运行仓库当时 worktree 仅有 `main` @ `96e054c` 与 `task/demo-c4` @ `6f21756`，**尚无** `demo/integration` 分支（需 `lauren-team-kit init-integration` 从明确基线创建后再 `merge --confirm`）。
 3. 本归档**不**声称合并完成；也不伪造成功合并证据。
 
 ## 可追溯索引

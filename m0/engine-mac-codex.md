@@ -2,7 +2,7 @@
 
 - **时间**：2026-11-04 19:05 +0800（Asia/Shanghai）
 - **锁定引擎**：Codex（OMB instanceId=`codex`）
-- **CLI 路径**：`/Users/Zhuanz1/.local/bin/codex`
+- **CLI 路径**：`codex（通过 PATH 查找）`
 - **版本**：codex-cli 0.151.0（OMB 提示可升 0.166.0，未强制）
 - **认证**：已登录（subscription / ChatGPT 计划可用）；邮箱见本机 Codex 账户，此处不抄密钥
 - **安装路径（复现）**：

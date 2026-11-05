@@ -70,7 +70,7 @@ python -m lauren_team_kit team-status --root . --team-id demo-t1
 3. 导入后 skills 默认关、routines 暂停；手动启用；包内无密钥。侧栏应见：幕僚长、开发助手、验证助手、Nancy私人助理、工程主管Matcha、工程bot①、工程bot②。
 4. 终端自检：`bash lauren-team-kit/scripts/t1_dual_task_smoke.sh`（先备 venv）。
 
-**诚实：Mac 0.1.140 真机 GUI 导入验收尚未完成。** 细节见 `lauren-omb-pack/team-v0.2/README.md`。F 盘整夹拷贝仅作附录，不是主路径。
+**诚实：Mac 0.1.140 真机 GUI 导入验收尚未完成。** 细节见 `lauren-omb-pack/team-v0.2/README.md`。请从公开仓库获取团队包。
 
 ## 明确未做
 

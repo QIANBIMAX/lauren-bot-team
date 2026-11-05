@@ -3,7 +3,7 @@
 版本：0.1  
 交付对象：Grok Bot 指挥官及开发团队  
 首发平台：macOS、Windows、Linux  
-批准：2026-11-04 陛下批（正文即原 V1.1，仅改版本号）
+批准：2026-11-04 项目维护者批（正文即原 V1.1，仅改版本号）
 
 本阶段以 **1 个幕僚长 + 1 个开发助手 + 1 个验证助手**，复现 Lauren 团队图中的核心工程闭环。
 
@@ -119,4 +119,4 @@ M0 可行性 → M1 执行闭环 → M2 交付闭环 → M3 改进闭环 → M4 
 
 - OpenMausBot **0.1.140** @ `/Applications/OpenMausBot.app`
 - macOS 15.7.7 arm64；数据目录 `~/Library/Application Support/openmausbot`
-- 用户机材料：`/Volumes/F/宁银理财/实习/lauren-bot-team-v0.1/m0/`
+- 用户机材料：`${PROJECT_ROOT}/m0/`

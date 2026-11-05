@@ -1,6 +1,6 @@
 # 兼容表 · Mac 行（M0）· 2026-11-04 19:05 +0800
 
-主机：MacBook-Air-5.local · Apple 芯片 · OpenMausBot 正在运行（pid 监听 127.0.0.1:8799）
+主机：[redacted-host] · Apple 芯片 · OpenMausBot 正在运行（pid 监听 127.0.0.1:8799）
 
 | 项 | 状态 | 证据/路径 | 备注 |
 |---|---|---|---|
@@ -13,7 +13,7 @@
 | 幕僚长委派（delegate_bot/ask_bot） | **延后：项目骨架完成后再测** | 文档/上游有 agents proxy；本机尚未抓到 Lauren 三角色委派回合 | 待 GUI 一步 |
 | 结果/结束/失败读取 | **已实测** | GET `/api/bots` 含 messages；`~/.openmausbot/messages.db` 可读；turnSucceeded / digest 可见 | 失败态样本尚未专门制造 |
 | 工作目录访问 | **已实测** | task `cwd` 指向 `~/.openmausbot/task-workspaces/...`；已写入 `m0-cwd-probe.txt` | 主机侧可写；bot 进程内读写待委派任务验证 |
-| 重启后任务记录 | **延后：项目骨架完成后再测** | 消息落盘 DB，具备持久化条件 | 未执行退出/重启实验（避免打断陛下当前会话） |
+| 重启后任务记录 | **延后：项目骨架完成后再测** | 消息落盘 DB，具备持久化条件 | 未执行退出/重启实验（避免打断项目维护者当前会话） |
 | 条件合并策略文档 | **已写** | `docs/merge-policy.md` | 默认 confirm；禁主仓 |
 | Eng 契约硬门 / kit 写验回流 | **需开发** | — | M1+ |
 | Windows / Linux OMB | **待测** | — | 无机器则标发布阻塞（计划原文） |
@@ -29,5 +29,5 @@
 | 写码闭环 | lauren-team-kit（后做） | OMB 不管闭环细节 |
 
 
-## 2026-11-04 19:11 +0800 陛下改口
+## 2026-11-04 19:11 +0800 项目维护者改口
 停 OMB 桌面粘贴建 bot / 委派 / 重启；改仓库骨架落地。上列未完成项标延后。

@@ -12,7 +12,7 @@
 | Round2 真修复后六条 must_run 全绿 | ✅ `a0134e2` |
 | confirm 后合入 `demo/integration`（ff） | ✅ 任务状态 **已完成** |
 | OMB GUI 委派本轮 | ⏭ 未驱动；委派通路以 demo-c4 为准 |
-| F 盘主仓同步 | ⏳ Mac 离线时在权威根 worktree 完成；待 Mac 上线回写 F |
+| 原始运行环境主仓同步 | ⏳ Mac 离线时在权威根 worktree 完成；待 Mac 上线同步至原始环境 |
 
 ## 功能
 
@@ -44,4 +44,4 @@
 
 ## 说明
 
-本轮闭环在权威根 `workspace/runs/demo-c5/worktree` 实跑（Mac/F 当时离线）。代码与证据已落盘；F 盘既有 `task/demo-c5`@`f4ca0e1` 待 Mac 恢复后对齐提交并（如需）再 push。
+本轮闭环在权威根 `workspace/runs/demo-c5/worktree` 实跑（Mac/F 当时离线）。代码与证据已落盘；原始运行环境既有 `task/demo-c5`@`f4ca0e1` 待 Mac 恢复后对齐提交并（如需）再 push。

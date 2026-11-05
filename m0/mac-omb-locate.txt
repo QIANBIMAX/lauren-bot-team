@@ -1,13 +1,13 @@
 date: 2026-11-04 Asia/Shanghai
 status: version pinned (locate + Info.plist); import/delegate/result APIs NOT yet tested
 plan: lauren-bot-team v0.1 M0
-host: MacBook-Air-5.local (Apple silicon)
+host: [redacted-host] (Apple silicon)
 app_path: /Applications/OpenMausBot.app
 bundle_id: com.openmausbot.app
 CFBundleShortVersionString: 0.1.140
 CFBundleVersion: 0.1.140
 LSMinimumSystemVersion: 12.0
-dmg: /Users/Zhuanz1/Downloads/OpenMausBot-0.1.140-arm64.dmg
+dmg: OpenMausBot-0.1.140-arm64.dmg
 app_support: ~/Library/Application Support/openmausbot
 url_scheme: openmausbot
 copyright: Copyright 2026 Milind Soni

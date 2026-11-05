@@ -66,7 +66,7 @@
 
 - OMB 委派探针归档：[`docs/runs/demo-c4.md`](docs/runs/demo-c4.md)（委派与验证有证据；**合并未完成**）
 - 公开仓：<https://github.com/QIANBIMAX/lauren-bot-team.git>  
-  **权威获取方式 = clone 本仓**；统一 sync / push 由执行线处理，本棒只写文件、不中途 sync F、不擅自 push。
+  获取方式：clone 本仓库。
 
 ## 延后项（诚实）
 
@@ -74,7 +74,3 @@
 - Windows / Linux
 - 四个完整 Eng / Full OMB GUI（Team 切片仅 stub ①②）
 - demo-c4 在 Demo 集成分支上的真实合并（需先 `init-integration`）
-
-## 材料路径（附录）
-
-- F 盘本地拷贝（可选，非主路径）：`/Volumes/F/宁银理财/实习/lauren-bot-team-v0.1/`

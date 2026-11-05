@@ -1,8 +1,6 @@
 # lauren-bot-team v0.1 进度（2026-11-05 08:10 Asia/Shanghai）
 
-权威根：`/workspace/lauren-bot-team-v0.1/`  
 公开仓：https://github.com/QIANBIMAX/lauren-bot-team.git（主路径 = clone → OMB Import）  
-F 盘：`/Volumes/F/宁银理财/实习/lauren-bot-team-v0.1/`（附录；**统一 sync/push 由执行线**，本棒只写文件、中途不 sync F）
 
 更新：2026-11-05 08:10 Asia/Shanghai — **正在补 OMB 可导入物**（Team + Lite 的 BotMRR / mausteam）；**GUI 真机验收未完成**。Lite L3–L5 与 Team v0.2 kit 侧此前已锁刀。
 
@@ -18,7 +16,6 @@ F 盘：`/Volumes/F/宁银理财/实习/lauren-bot-team-v0.1/`（附录；**统�
 
 ## 公开仓
 - `https://github.com/QIANBIMAX/lauren-bot-team.git`
-- 统一 sync F / push：执行线；本棒只写权威树文件
 
 ## 延后 / 未验收
 - **OMB GUI 真机导入验收**（BotMRR / mausteam 文件已备，验收未跑）
