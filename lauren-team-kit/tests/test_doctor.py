@@ -52,7 +52,9 @@ def test_doctor_report_shape_and_linux_facts() -> None:
         assert report["long_path"]["enabled"] is None
     elif sys.platform == "win32":
         assert report["lock"]["fcntl_present"] is False
-        assert report["lock"]["cross_process_lock"] == "not_implemented"
+        assert report["lock"]["capability"] == "msvcrt"
+        assert report["lock"]["cross_process_lock"] == "msvcrt_locking"
+        assert "no-op" in report["lock"]["hint"]
         assert report["long_path"]["applicable"] is True
 
 

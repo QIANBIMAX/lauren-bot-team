@@ -26,10 +26,14 @@ _WORKBENCH_HINT = (
 )
 _LOCK_HINT_PRESENT = (
     "本解释器可导入 fcntl.flock（POSIX 建议锁）。"
-    "这不是 Windows 锁验收；无 fcntl 时现有文件锁仍是 no-op，W3 未做。"
+    "这不是 Windows 锁验收。完整 W3（占用重试、仓库级集成锁、路径身份）仍未做。"
+)
+_LOCK_HINT_MSVCRT = (
+    "本解释器没有 fcntl。Windows 读改写使用标准库 msvcrt.locking，不是 no-op。"
+    "完整 W3（占用重试、仓库级集成锁、路径身份）仍未做。"
 )
 _LOCK_HINT_ABSENT = (
-    "本解释器没有 fcntl。Windows 上现有文件锁是 no-op，不能当成跨进程锁；W3 未做。"
+    "当前解释器没有可用文件锁。不能把缺失锁当成已互斥。完整 W3 未做。"
 )
 
 
@@ -245,12 +249,36 @@ def _probe_lock() -> dict[str, Any]:
         present = hasattr(fcntl, "flock")
     except ImportError:
         present = False
+    if present:
+        return {
+            "fcntl_present": True,
+            "capability": "fcntl",
+            "cross_process_lock": "posix_flock",
+            "required": False,
+            "hint": _LOCK_HINT_PRESENT,
+        }
+    if sys.platform == "win32":
+        msvcrt_ok = False
+        try:
+            import msvcrt
+
+            msvcrt_ok = hasattr(msvcrt, "locking")
+        except ImportError:
+            msvcrt_ok = False
+        if msvcrt_ok:
+            return {
+                "fcntl_present": False,
+                "capability": "msvcrt",
+                "cross_process_lock": "msvcrt_locking",
+                "required": False,
+                "hint": _LOCK_HINT_MSVCRT,
+            }
     return {
-        "fcntl_present": present,
-        "capability": "fcntl" if present else "unavailable",
-        "cross_process_lock": "posix_flock" if present else "not_implemented",
+        "fcntl_present": False,
+        "capability": "unavailable",
+        "cross_process_lock": "not_implemented",
         "required": False,
-        "hint": _LOCK_HINT_PRESENT if present else _LOCK_HINT_ABSENT,
+        "hint": _LOCK_HINT_ABSENT,
     }
 
 

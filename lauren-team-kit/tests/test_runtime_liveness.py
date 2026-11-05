@@ -29,11 +29,13 @@ from lauren_team_kit.worktree_ops import ensure_task_worktree
 
 
 class _KernelDouble:
-    def __init__(self, handle: int, error: int) -> None:
+    def __init__(self, handle: int, error: int, *, exited: bool = False) -> None:
         self.handle = handle
         self.error = error
+        self.exited = exited
         self.opened: list[tuple[int, bool, int]] = []
         self.closed: list[int] = []
+        self.waits: list[tuple[int, int]] = []
 
     def OpenProcess(self, access: int, inherit: bool, pid: int) -> int:
         self.opened.append((int(access), bool(inherit), int(pid)))
@@ -41,6 +43,12 @@ class _KernelDouble:
 
     def last_error(self) -> int:
         return self.error
+
+    def WaitForSingleObject(self, handle: int, timeout_ms: int) -> int:
+        self.waits.append((int(handle), int(timeout_ms)))
+        if self.exited:
+            return 0
+        return 0x102
 
     def CloseHandle(self, handle: int) -> int:
         self.closed.append(int(handle))
@@ -188,9 +196,15 @@ def test_windows_open_process_is_query_only(monkeypatch: pytest.MonkeyPatch) -> 
 
     assert pid_alive(4321) is True
     assert kills == []
-    assert kernel.opened == [(0x1000, False, 4321)]
+    assert len(kernel.opened) == 1
+    access, inherit, opened_pid = kernel.opened[0]
+    assert opened_pid == 4321
+    assert inherit is False
+    assert access & 0x0001 == 0  # not PROCESS_TERMINATE
+    assert access & 0x1000 == 0x1000
+    assert access & 0x00100000 == 0x00100000  # SYNCHRONIZE, for the exit wait
+    assert kernel.waits == [(7, 0)]
     assert kernel.closed == [7]
-    assert 0x1000 != 0x0001
 
 
 def test_windows_open_process_error_mapping(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -207,6 +221,23 @@ def test_windows_open_process_error_mapping(monkeypatch: pytest.MonkeyPatch) -> 
     assert interpret_open_process_result(0, 5) is True
     assert interpret_open_process_result(4, 87) is True
     assert interpret_open_process_result(0, 0) is None
+
+
+def test_windows_exited_process_is_not_the_same_executor(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A dead process whose kernel object is still open must not stay 'alive'."""
+
+    def boom(*_args: object, **_kwargs: object) -> None:
+        raise AssertionError("os.kill on Windows liveness")
+
+    monkeypatch.setattr(runtime, "_is_windows", lambda: True)
+    monkeypatch.setattr(runtime.os, "kill", boom)
+    kernel = _KernelDouble(handle=4, error=0, exited=True)
+    monkeypatch.setattr(runtime, "_load_kernel32", lambda: kernel)
+    assert pid_alive(10) is False
+    assert kernel.waits == [(4, 0)]
+    assert executor_still_same(10, "winft:same") is False
 
 
 def test_windows_cancel_does_not_kill_sacrificial_child(

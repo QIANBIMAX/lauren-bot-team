@@ -52,8 +52,13 @@ def _lease(task: dict[str, Any]) -> dict[str, Any]:
 
 # PROCESS_QUERY_LIMITED_INFORMATION. Not PROCESS_TERMINATE (0x0001).
 _WIN_PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
+# Right to wait on the process object. Not a terminate right.
+_WIN_SYNCHRONIZE = 0x00100000
 _WIN_ERROR_ACCESS_DENIED = 5
 _WIN_ERROR_INVALID_PARAMETER = 87
+_WIN_WAIT_OBJECT_0 = 0x00000000
+_WIN_WAIT_TIMEOUT = 0x00000102
+_WIN_STILL_ACTIVE = 259
 
 WINDOWS_CANCEL_INCOMPLETE = (
     "Windows 取消未完成：未实现 Job Object / 受控进程树。"
@@ -123,6 +128,13 @@ def _load_kernel32():  # type: ignore[no-untyped-def]
     kernel32.OpenProcess.restype = ctypes.c_void_p
     kernel32.CloseHandle.argtypes = [ctypes.c_void_p]
     kernel32.CloseHandle.restype = wintypes.BOOL
+    kernel32.WaitForSingleObject.argtypes = [ctypes.c_void_p, wintypes.DWORD]
+    kernel32.WaitForSingleObject.restype = wintypes.DWORD
+    kernel32.GetExitCodeProcess.argtypes = [
+        ctypes.c_void_p,
+        ctypes.POINTER(wintypes.DWORD),
+    ]
+    kernel32.GetExitCodeProcess.restype = wintypes.BOOL
     return kernel32
 
 
@@ -143,24 +155,97 @@ def _read_last_error(kernel32: object) -> int:
     return int(ctypes.get_last_error())
 
 
-def _pid_alive_windows(pid: int) -> bool | None:
-    """No-side-effect liveness via ``OpenProcess`` + ``CloseHandle``.
+def _open_process(kernel32: Any, access: int, pid: int) -> tuple[int, int]:
+    handle = kernel32.OpenProcess(access, False, int(pid))
+    err = _read_last_error(kernel32)
+    return int(handle or 0), int(err)
 
-    Does not call ``os.kill`` and does not request terminate rights.
+
+def _windows_wait_exited(kernel32: Any, handle: int) -> bool | None:
+    """True if the process has exited, False if it is still running.
+
+    ``WaitForSingleObject(handle, 0)`` only checks the synchronization object.
+    An exited process whose handle is still open (Python ``Popen`` keeps one
+    after ``wait()``) still opens successfully, and ``GetProcessTimes`` still
+    returns the original creation time. That must not count as the same live
+    executor. Timeout 0 does not terminate anything.
+    """
+    wait = getattr(kernel32, "WaitForSingleObject", None)
+    if not callable(wait):
+        return None
+    result = int(wait(handle, 0))
+    if result == _WIN_WAIT_TIMEOUT:
+        return False
+    if result == _WIN_WAIT_OBJECT_0:
+        return True
+    return None
+
+
+def _windows_exit_code(kernel32: Any, handle: int) -> int | None:
+    """Exit code, or None if it cannot be read.
+
+    ``STILL_ACTIVE`` (259) is the API sentinel for "still running", so a
+    process that really exited with 259 is ambiguous on this fallback.
+    """
+    import ctypes
+    from ctypes import wintypes
+
+    getter = getattr(kernel32, "GetExitCodeProcess", None)
+    if not callable(getter):
+        return None
+    code = wintypes.DWORD()
+    ok = getter(handle, ctypes.byref(code))
+    if not ok:
+        return None
+    return int(code.value)
+
+
+def _pid_alive_from_handle(kernel32: Any, handle: int) -> bool | None:
+    exited = _windows_wait_exited(kernel32, handle)
+    if exited is True:
+        return False
+    if exited is False:
+        return True
+    code = _windows_exit_code(kernel32, handle)
+    if code is None:
+        return None
+    return code == _WIN_STILL_ACTIVE
+
+
+def _pid_alive_windows(pid: int) -> bool | None:
+    """No-side-effect liveness via ``OpenProcess`` plus an exit check.
+
+    Does not call ``os.kill`` and does not request ``PROCESS_TERMINATE``.
+    A process that has already exited is False even when its kernel object
+    is still alive because some other handle is open. Creation-time mismatch
+    is applied by :func:`executor_still_same` when the pid is still running.
     """
     try:
         kernel32 = _load_kernel32()
     except OSError:
         return None
-    handle = kernel32.OpenProcess(
-        _WIN_PROCESS_QUERY_LIMITED_INFORMATION,
-        False,
-        int(pid),
-    )
-    err = _read_last_error(kernel32)
+    query_sync = _WIN_PROCESS_QUERY_LIMITED_INFORMATION | _WIN_SYNCHRONIZE
+    handle, err = _open_process(kernel32, query_sync, pid)
     if handle:
+        try:
+            return _pid_alive_from_handle(kernel32, handle)
+        finally:
+            kernel32.CloseHandle(handle)
+    if err == _WIN_ERROR_INVALID_PARAMETER:
+        return False
+    if err != _WIN_ERROR_ACCESS_DENIED:
+        return None
+    # SYNCHRONIZE was refused. Query-only still sees the exit code.
+    handle, err = _open_process(kernel32, _WIN_PROCESS_QUERY_LIMITED_INFORMATION, pid)
+    if not handle:
+        return interpret_open_process_result(0, err)
+    try:
+        code = _windows_exit_code(kernel32, handle)
+        if code is None:
+            return None
+        return code == _WIN_STILL_ACTIVE
+    finally:
         kernel32.CloseHandle(handle)
-    return interpret_open_process_result(int(handle or 0), err)
 
 
 def _parse_proc_stat_starttime(text: str) -> str | None:
