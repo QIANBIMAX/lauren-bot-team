@@ -55,8 +55,16 @@ def _now_iso() -> str:
 
 
 def schema_path() -> Path:
-    """Prefer contracts/ next to installed package's parents, else walk up."""
+    """Schema shipped inside the package, else the repo contracts file.
+
+    A wheel install does not have the git checkout next to it, so the copy
+    under ``lauren_team_kit/data`` is the runtime file. ``contracts/`` stays
+    the edited source and must match that copy.
+    """
     here = Path(__file__).resolve()
+    packaged = here.parent / "data" / "task-protocol.schema.json"
+    if packaged.is_file():
+        return packaged
     candidates = [
         here.parents[2] / "contracts" / "task-protocol.schema.json",  # src/../contracts
         here.parents[3] / "contracts" / "task-protocol.schema.json",  # kit root

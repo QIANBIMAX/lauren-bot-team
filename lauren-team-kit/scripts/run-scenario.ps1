@@ -1,7 +1,7 @@
 # Thin Windows entry. Does not change the execution policy.
 # If PowerShell blocks this file, run the same command directly:
 #   py -3 -m lauren_team_kit.scenarios <name> --root <repo>
-# Do not run Set-ExecutionPolicy Unrestricted for the machine.
+# Do not change the machine execution policy to unrestricted.
 param(
     [Parameter(Mandatory = $true, Position = 0)]
     [string]$Name,

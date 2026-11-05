@@ -8,7 +8,9 @@ version = "0.1.0"
 description = "Lauren bot-team task protocol: validate, state machine, evidence, CLI"
 readme = "README.md"
 requires-python = ">=3.11"
-dependencies = []
+# jsonschema is a runtime dependency so a wheel install can validate tasks
+# without a separate extras step. No lock library: W3 uses stdlib fcntl/msvcrt.
+dependencies = ["jsonschema>=4.0"]
 
 [project.optional-dependencies]
 schema = ["jsonschema>=4.0"]
@@ -19,6 +21,9 @@ lauren-team-kit = "lauren_team_kit.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+lauren_team_kit = ["data/*.json"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

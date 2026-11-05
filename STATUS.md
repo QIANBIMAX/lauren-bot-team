@@ -4,15 +4,24 @@
 
 ## 下一焦点
 
-**Windows / Linux 原生 kit**（Lite + Team 共用 `lauren-team-kit`）。目标是 Windows 11 x64 与 Ubuntu 24.04 x64，macOS 只做回归。**不是 VibeX 的 Win/Linux，也不是 Full。** 已有 VibeX 材料保持延后，不删。
+**原生 kit 预览的程序侧（W3–W6）已写进仓库。** Lite 与 Team 仍共用 `lauren-team-kit`。目标平台是 Windows 11 x64 与 Ubuntu 24.04 x64，macOS 做回归。**不是 VibeX，也不是 Full。**
 
-计划：[`docs/win-linux-development-plan.md`](docs/win-linux-development-plan.md)。
+计划：[`docs/win-linux-development-plan.md`](docs/win-linux-development-plan.md)。安装与恢复：[`docs/native-kit-windows.md`](docs/native-kit-windows.md)、[`docs/native-kit-ubuntu.md`](docs/native-kit-ubuntu.md)、[`docs/native-kit-common.md`](docs/native-kit-common.md)。
 
-本切片做 W0 doctor、Windows 探活隔离（不再走 `os.kill(pid, 0)`；已退出的进程不算仍在执行），以及 Windows 读改写用的最小 `msvcrt` 字节锁（不再把锁降级成 no-op）。完整 W3、W1 命令契约、W4 Demo、W5–W6、W7 工作台都在后续 PR。`omb_delegate` 真实桥接仍未接通，单独记账，不能写成已可用。
+| 项 | 程序侧 | 还缺什么 |
+|---|---|---|
+| W0 doctor、Windows 探活不再 `os.kill(pid, 0)` | 已在 `08d0f15` | 两平台归档环境清单仍无；不关闭 M0 |
+| W3 锁 / 路径 / common-dir 合并锁 / 只读 Git 诊断 | 已实现，并有测试 | 网络盘未支持。真机文件占用只在单测里模拟重试 |
+| W1 argv 验收、同一轮 must_run、旧 shell 不拆词 | 已实现 | Windows 11 桌面尚未手跑 |
+| W4 结构化规则探针 + Python 场景 | 已实现。`.sh` / `run-scenario.ps1` 只是入口 | Bash 规则在无 POSIX shell 时是 cannot-run，不是 pass |
+| W5 权限不放宽、双进程不丢记录、委派保持 blocked | 测试覆盖 | 无模型场景不是真实助手并发 |
+| W6 wheel、运行期 jsonschema、bootstrap | 已实现。CI 会在源码树外装 wheel | 没有 exe/AppImage |
+| W2 取消整棵进程树 | POSIX 验收子进程可按进程组停 | **Windows Job Object 仍未做**，取消状态保持 `windows_incomplete` |
+| W7 OMB 桌面 | **明确不做** | 导入、真实委派、重启、失败恢复都留给人工桌面 |
 
-代码、CI、自动测试在仓库里推进。OMB GUI 真机（桌面导入 / 委派 / 重启）留给人工在桌面环境做。没有证据之前，Win/Linux 仍是 **未测**，`platforms: any` 不是发布结论。
+`omb_delegate` 仍是 `blocked` / `simulated`，不能写成已接通。`windows-latest` 与 `ubuntu-24.04` 的 CI 不是 Windows 11 / Ubuntu 桌面验收。没有桌面证据之前，这两列仍写 **未测** 或 **CI**，`platforms: any` 不是发布结论。
 
-更新：2026-11-05 — 焦点从 Lite 收口转到上述原生 kit。Lite-E 程序侧与文档仍以 `f0d1734` 为基线；GUI / 三平台验收没有因此变成已完成。
+更新：2026-11-05 — W3–W6 程序侧接在 W0（`08d0f15`）之后。GUI 没有因此变成已验收。
 
 ## 已齐
 - **Lite-E / 独立发布**：`docs/lite-release-checklist.md`（对照 §六 1–8）；`docs/lite-failure-recovery.md`；`docs/platforms.md` 矩阵；`lauren-team-kit/scripts/validate_lite_pack.py` + `tests/test_lite_e.py`
@@ -30,7 +39,7 @@
 | Lite-A～D | 程序侧齐（基线 `f0d1734`） |
 | Lite-E | 文档 + 静态校验齐 |
 | OMB GUI / 委派 / 重启 | **未验收（预览限制）** |
-| Win / Linux | **未测**（原生 kit 已是当前焦点；尚无验收证据） |
+| Win / Linux 桌面与 OMB | **未测**（kit 程序侧 W3–W6 已提交；CI ≠ 桌面验收） |
 | Full | **未批开干** |
 
 ## 公开仓
@@ -40,7 +49,7 @@
 ## 延后 / 未验收
 - **OMB GUI 真机导入验收**（blocked）
 - Windows / Linux 新人验收与 OMB 工作台（**仍未测**；`platforms: any` 非证据；原生 kit 见文首「下一焦点」，不是 VibeX）
-- **真 OS 杀进程 / 断网 / 应用重启**级恢复（Windows 探活已改为无副作用查询；受控取消进程树仍未做，不得宣称 OS 杀进程已验收）
+- **真 OS 杀进程 / 断网 / 应用重启**级恢复（Windows 探活已改为无副作用查询；Job Object 取消树仍是 `windows_incomplete`，不得宣称 OS 杀进程已验收）
 - **Full 产品线**（未批开干）
 
 ## 原则
