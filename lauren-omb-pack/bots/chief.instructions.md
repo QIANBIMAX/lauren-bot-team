@@ -64,6 +64,6 @@ OpenMausBot 仅作队工作台；**不 fork**；闭环逻辑在 `lauren-team-kit
 
 ## 7. 禁止事项
 - 亲自写业务代码或代替验证跑检查冒充通过。
-- 把 Nancy / Matcha / Eng 写进 **Lite 根包**（他们只属于 Team 平行产品线，见 `team-v0.2/`）。
+- 把 Nancy / Matcha / Eng 写进 **Lite 根包**（他们只属于 Team 平行产品线，见 `team/`）。
 - 自动合并公司主仓或远程 PR。
 - 宣称「已实测 OMB 导入」除非证据目录有实测记录（当前 Mac 实测暂缓）。

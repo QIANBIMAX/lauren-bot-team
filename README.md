@@ -18,9 +18,9 @@ Lite 与 Team 是 **平行、对等的两套 Import 材料**，互不依赖、�
 | 产品线 | 适合谁 | BotMRR（优先） | 兼容旧格式 |
 |---|---|---|---|
 | **Lite** | 三角闭环：派活 → 写码 → 验收 | [`lauren-omb-pack/lauren-lite.botmrr.md`](lauren-omb-pack/lauren-lite.botmrr.md) | [`lauren-omb-pack/team.mausteam.json`](lauren-omb-pack/team.mausteam.json) |
-| **Team** | 三角 + 进度协调 + 工程调度（含 stub） | [`lauren-omb-pack/team-v0.2/lauren-team.botmrr.md`](lauren-omb-pack/team-v0.2/lauren-team.botmrr.md) | [`lauren-omb-pack/team-v0.2/team.mausteam.json`](lauren-omb-pack/team-v0.2/team.mausteam.json) |
+| **Team** | 三角 + 进度协调 + 工程调度（含 stub） | [`lauren-omb-pack/team/lauren-team.botmrr.md`](lauren-omb-pack/team/lauren-team.botmrr.md) | [`lauren-omb-pack/team/team.mausteam.json`](lauren-omb-pack/team/team.mausteam.json) |
 
-> 目录名 `team-v0.2/` 是历史切片名，可先保留；**导入文件名已去掉版本号**（`lauren-team.botmrr.md`）。Full 将来会有自己的目录与文件名。
+> Lite 与 Team 的导入文件与目录均使用无版本号命名。Full 尚未交付。
 
 ### 怎么用（省 token）
 
@@ -60,7 +60,7 @@ Lite 与 Team 是 **平行、对等的两套 Import 材料**，互不依赖、�
 | **工程主管Matcha** | `matcha` | 图：工程主管 Matcha · Eng Lead。管工程线、排任务指派工程bot，不亲自干重活；**不写验证、不写业务代码** |
 | **工程bot①** / **工程bot②** | `eng-a` / `eng-b` | 图：工程 bot ①②。本期占位 stub，只回状态；**不是** Full Eng ①–④（③④先不建） |
 
-材料：[`lauren-omb-pack/team-v0.2/`](lauren-omb-pack/team-v0.2/) · 说明：[`docs/team-v0.2.md`](docs/team-v0.2.md)。
+材料：[`lauren-omb-pack/team/`](lauren-omb-pack/team/) · 说明：[`docs/team.md`](docs/team.md)。
 
 ## 快速路径（主路径 = GitHub clone → OMB Import）
 
@@ -72,7 +72,7 @@ Lite 与 Team 是 **平行、对等的两套 Import 材料**，互不依赖、�
 2. 安装 OMB（Mac 钉死 **0.1.140**，见 `UPSTREAM.md`）。
 3. 在 OMB 里 **Import 团队**（二选一，平行产品线）：
    - **Lite**：`lauren-omb-pack/lauren-lite.botmrr.md`（兼容：`lauren-omb-pack/team.mausteam.json`）
-   - **Team**：`lauren-omb-pack/team-v0.2/lauren-team.botmrr.md`（兼容：同目录 `team.mausteam.json`）
+   - **Team**：`lauren-omb-pack/team/lauren-team.botmrr.md`（兼容：同目录 `team.mausteam.json`）
    - 菜单大致是 Templates → Import；名字以界面为准。详见 [`lauren-omb-pack/README.md`](lauren-omb-pack/README.md)。
 4. 导入后：skills 默认关、routines 暂停；须手动启用；**包内无密钥**。日常优先 **私聊幕僚长**；群房间按需再开。
 5. 不靠 OMB GUI 也能先看懂闭环：在 `demo-app` 跑 C1/C2/C3；Team 可再跑 `bash lauren-team-kit/scripts/t1_dual_task_smoke.sh`（先按安装指南备 venv）。

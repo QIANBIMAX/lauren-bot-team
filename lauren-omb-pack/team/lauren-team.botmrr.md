@@ -1,8 +1,8 @@
 ---
 botmrr: 1
-id: lauren-team-v0.2
+id: lauren-team
 release: 0.2.0
-name: Lauren Team v0.2
+name: Lauren Team
 tagline: Scope, build, verify, and coordinate dual tasks without fake passes.
 summary: A seven-role Lauren crew for OpenMausBot — 幕僚长 / 云端编程助手 / 验证助手 / Nancy私人助理 / 工程主管Matcha / 工程bot①·②（stub）— with hard bans so progress and schedule roles never mark verification pass or invent artifacts. （图职称；技术 key 仍为 nancy/matcha/eng-a/eng-b。）
 category: Engineering
@@ -135,7 +135,7 @@ examples:
     output: 工程主管Matcha加任务并指派；工程bot stub 确认；Nancy私人助理汇总状态与阻塞；验证与合并仍归验证助手 + 幕僚长；未跑检查不得宣称通过。
 ---
 
-# Lauren Team v0.2
+# Lauren Team
 
 Scope, build, verify, and coordinate dual tasks without fake passes.
 

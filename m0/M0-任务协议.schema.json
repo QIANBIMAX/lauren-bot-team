@@ -431,7 +431,7 @@
     "team": {
       "type": "object",
       "additionalProperties": false,
-      "description": "Team v0.2 optional link: child task under a team run",
+      "description": "Team optional link: child task under a team run",
       "properties": {
         "team_id": {
           "type": "string",
@@ -501,5 +501,5 @@
       }
     }
   ],
-  "description": "Runtime MUST also enforce: every acceptance item with must_run=true has a checks[] entry with executed=true before status may be 验证通过. JSON Schema alone cannot express cross-array quantification portably. Optional Team v0.2 fields: team, parent_task_id."
+  "description": "Runtime MUST also enforce: every acceptance item with must_run=true has a checks[] entry with executed=true before status may be 验证通过. JSON Schema alone cannot express cross-array quantification portably. Optional Team fields: team, parent_task_id."
 }

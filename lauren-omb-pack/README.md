@@ -16,9 +16,9 @@ Lite 与 Team **对等、独立**：选一条 Import，不要当成「先 Lite �
 | 产品线 | BotMRR（优先） | 旧格式兼容 | 角色（侧栏显示名） |
 |---|---|---|---|
 | **Lite** | [`lauren-lite.botmrr.md`](lauren-lite.botmrr.md) | [`team.mausteam.json`](team.mausteam.json) | 幕僚长 / 云端编程助手 / 验证助手 |
-| **Team** | [`team-v0.2/lauren-team.botmrr.md`](team-v0.2/lauren-team.botmrr.md) | [`team-v0.2/team.mausteam.json`](team-v0.2/team.mausteam.json) | 上表三角 + **Nancy私人助理** / **工程主管Matcha** / **工程bot①②**（stub） |
+| **Team** | [`team/lauren-team.botmrr.md`](team/lauren-team.botmrr.md) | [`team/team.mausteam.json`](team/team.mausteam.json) | 上表三角 + **Nancy私人助理** / **工程主管Matcha** / **工程bot①②**（stub） |
 
-目录 `team-v0.2/` 为历史切片名，可先保留；导入文件名是 `lauren-team.botmrr.md`（无版本号）。详见 [`team-v0.2/README.md`](team-v0.2/README.md)。
+Team 使用无版本号目录与导入文件。详见 [团队说明](team/README.md)。
 
 ### 联系方式（省 token）
 
@@ -43,10 +43,10 @@ Lite 与 Team **对等、独立**：选一条 Import，不要当成「先 Lite �
 | `bots/developer.instructions.md` | 云端编程助手 |
 | `bots/verifier.instructions.md` | 验证助手 |
 
-Team 角色说明在 `team-v0.2/bots/`（Nancy私人助理 / 工程主管Matcha / 工程bot）。Group 参考 `groups/lauren-core.md` / `team-v0.2/groups/`（群可选）。
+Team 角色说明在 `team/bots/`（Nancy私人助理 / 工程主管Matcha / 工程bot）。Group 参考 `groups/lauren-core.md` / `team/groups/`（群可选）。
 
 ## 清单
 
 - Lite：`team.manifest.md`
-- Team：`team-v0.2/team.manifest.md`
+- Team：`team/team.manifest.md`
 - 兼容与延后：`../docs/compatibility.md`

@@ -2,7 +2,7 @@
   "format": "openmaus.team",
   "version": 1,
   "team": {
-    "name": "Lauren Team v0.2",
+    "name": "Lauren Team",
     "description": "Team edition：幕僚长/开发助手/验证助手 + Nancy私人助理 + 工程主管Matcha + 工程bot①② stub。幕僚长只派活盯质量；Nancy私人助理日常协调与进度；工程主管Matcha只调度；验证/合并走验证助手+幕僚长；工程bot本期 stub（③④未建）；未跑不得标通过；例程暂停；包内无密钥。",
     "members": [
       {

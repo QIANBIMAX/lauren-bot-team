@@ -1,4 +1,4 @@
-# demo-t1 — Team v0.2 双任务烟雾
+# demo-t1 — Team 双任务烟雾
 
 日期：2026-11-04（Asia/Shanghai）
 

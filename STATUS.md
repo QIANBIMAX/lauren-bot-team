@@ -9,10 +9,10 @@
 - `lauren-team-kit`：状态机 CLI、must_run 硬门、verify-gate / record-check / merge-precheck、`check-rule` / `preflight`
 - **验证门加固** + **merge-precheck 真实本地 Git** + **真实本地 merge**（confirm；永不默认 push）
 - Demo C1–C5；**Lite L3 demo-c6**；**L4 demo-c7**；**L5 demo-c8**
-- **Team demo-t1**：Team API + 角色硬拦；材料目录 `lauren-omb-pack/team-v0.2/`（历史名；与 Lite 平行）
+- **Team demo-t1**：Team API + 角色硬拦；材料目录 `lauren-omb-pack/team/`（与 Lite 平行）
 - **OMB 可导入物（文件已补，≠ GUI 已验收）**：
   - Lite：`lauren-omb-pack/lauren-lite.botmrr.md` + `lauren-omb-pack/team.mausteam.json`
-  - Team：`lauren-omb-pack/team-v0.2/lauren-team.botmrr.md` + `team.mausteam.json`
+  - Team：`lauren-omb-pack/team/lauren-team.botmrr.md` + `team.mausteam.json`
 
 ## 公开仓
 - `https://github.com/QIANBIMAX/lauren-bot-team.git`

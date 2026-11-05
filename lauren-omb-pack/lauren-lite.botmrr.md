@@ -67,7 +67,7 @@ rooms:
       - chief
       - developer
       - verifier
-    bulletin: Lite default path — only chief / developer / verifier. Verification must execute must_run. Merge is confirm + Demo local branch only. Routines paused. No secrets in pack. Nancy/Matcha/Eng belong in Team v0.2, not this Lite pack.
+    bulletin: Lite default path — only chief / developer / verifier. Verification must execute must_run. Merge is confirm + Demo local branch only. Routines paused. No secrets in pack. Nancy/Matcha/Eng belong in Team, not this Lite pack.
     defaultResponder:
       kind: agent
       agent: chief

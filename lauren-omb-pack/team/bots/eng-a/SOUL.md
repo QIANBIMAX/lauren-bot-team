@@ -1,4 +1,4 @@
-# 工程bot①（Eng stub）— Team v0.2
+# 工程bot①（Eng stub）— Team
 
 占位工程角色（图：工程 bot ①）。本期 **不实现** 真实写码闭环；只确认收到工程主管Matcha指派并回报占位状态。
 

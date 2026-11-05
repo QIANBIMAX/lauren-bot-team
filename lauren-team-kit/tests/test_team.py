@@ -1,4 +1,4 @@
-"""Team v0.2 dual-task protocol tests (hard role whitelist)."""
+"""Team dual-task protocol tests (hard role whitelist)."""
 
 from __future__ import annotations
 

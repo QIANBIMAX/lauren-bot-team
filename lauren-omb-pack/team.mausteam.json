@@ -3,7 +3,7 @@
   "version": 1,
   "team": {
     "name": "Lauren Lite",
-    "description": "Lite triangle only: chief / developer / verifier. must_run hard gates; confirm-before-local Demo merge; routines paused; no secrets. Nancy/Matcha/Eng are Team v0.2, not this pack.",
+    "description": "Lite triangle only: chief / developer / verifier. must_run hard gates; confirm-before-local Demo merge; routines paused; no secrets. Nancy/Matcha/Eng are Team, not this pack.",
     "members": [
       {
         "key": "chief",
@@ -38,7 +38,7 @@
     ],
     "room": {
       "name": "Lauren Lite Room",
-      "bulletin": "Lite default — only chief/developer/verifier. No fake pass. Routines paused. No secrets. Team roles live in team-v0.2.",
+      "bulletin": "Lite default — only chief/developer/verifier. No fake pass. Routines paused. No secrets. Team roles live in team.",
       "defaultResponder": {
         "kind": "member",
         "member": "chief"

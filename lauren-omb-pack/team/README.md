@@ -1,7 +1,7 @@
 # Team 产品线包（可导入）
 
 与根目录 **Lite** 包平行、对等：要协调 / 调度角色时 **直接 Import 本目录**，不必先装 Lite 再「旁路扩展」。  
-**Full** 是未来第三条产品线；本目录名 `team-v0.2/` 为历史切片名，可先保留。
+**Full** 是未来第三条产品线；本目录为独立 Team 部署包。
 
 本目录一次导入：三角色 + Nancy私人助理 / 工程主管Matcha / 工程bot①② stub，配合 `lauren-team-kit` 的 Team API。显示名对照 Lauren 组织图。
 
@@ -17,16 +17,16 @@ cd lauren-bot-team
 1. 打开本机 OpenMausBot（Mac 建议 **0.1.140**）。
 2. 走 **Templates → Import**（菜单名以界面为准）。
 3. 选择本地文件：
-   - `lauren-omb-pack/team-v0.2/lauren-team.botmrr.md`
+   - `lauren-omb-pack/team/lauren-team.botmrr.md`
 4. 或（仓库已公开且该文件已 push 后）粘贴 raw GitHub URL，例如：
-   - `https://raw.githubusercontent.com/QIANBIMAX/lauren-bot-team/main/lauren-omb-pack/team-v0.2/lauren-team.botmrr.md`
+   - `https://raw.githubusercontent.com/QIANBIMAX/lauren-bot-team/main/lauren-omb-pack/team/lauren-team.botmrr.md`
    - 分支名以实际默认分支为准。
 
 ### 兼容 0.1.140：旧格式 `team.mausteam.json`
 
 若界面更认旧团队模板：
 
-- 文件：`lauren-omb-pack/team-v0.2/team.mausteam.json`
+- 文件：`lauren-omb-pack/team/team.mausteam.json`
 - 走 Import / 团队模板导入（菜单名以界面为准）。
 
 ## 导入后请注意
@@ -61,6 +61,6 @@ bash lauren-team-kit/scripts/t1_dual_task_smoke.sh
 
 ## 相关
 
-- 说明：[`docs/team-v0.2.md`](../../docs/team-v0.2.md)
+- 说明：[`docs/team.md`](../../docs/team.md)
 - Lite 平行线：[`../lauren-lite.botmrr.md`](../lauren-lite.botmrr.md)、[`../team.mausteam.json`](../team.mausteam.json)
 - 清单：`team.manifest.md`

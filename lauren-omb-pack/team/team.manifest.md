@@ -7,6 +7,6 @@
 - nancy → bots/nancy.instructions.md (+ bots/nancy/SOUL.md)
 - matcha → bots/matcha.instructions.md (+ bots/matcha/SOUL.md)
 - eng-a / eng-b → stubs only（③④未建）
-- group → groups/lauren-team-v0.2.md（可选；优先私聊幕僚长）
+- group → groups/lauren-team.md（可选；优先私聊幕僚长）
 - 导入文件：`lauren-team.botmrr.md`（+ `team.mausteam.json`）
 - 与 Lite 根包平行；不把 Nancy / Matcha 写进 Lite 根目录

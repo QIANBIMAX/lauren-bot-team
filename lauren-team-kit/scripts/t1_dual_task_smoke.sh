@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# demo-t1 Team v0.2：双任务 + Nancy 汇总 + Matcha 指派（Eng stub）
+# demo-t1 Team：双任务 + Nancy 汇总 + Matcha 指派（Eng stub）
 set -euo pipefail
 KIT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 ROOT="$(cd "${KIT_ROOT}/.." && pwd)"

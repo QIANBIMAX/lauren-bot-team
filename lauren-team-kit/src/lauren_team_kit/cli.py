@@ -1041,8 +1041,8 @@ def build_parser() -> argparse.ArgumentParser:
     p_ls.set_defaults(func=cmd_lesson_show)
 
 
-    # ---- Team v0.2 dual-task ----
-    p_tc = sub.add_parser("team-create", help="创建 Team v0.2 run（Nancy/Matcha）")
+    # ---- Team dual-task ----
+    p_tc = sub.add_parser("team-create", help="创建 Team run（Nancy/Matcha）")
     p_tc.add_argument("--root", required=True)
     p_tc.add_argument("--team-id", required=True)
     p_tc.add_argument("--title", required=True)

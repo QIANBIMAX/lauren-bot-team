@@ -7,7 +7,7 @@
 | | Lite | Team（本切片） | Full（未来） |
 |---|---|---|---|
 | 定位 | 平行产品线之一 | 平行产品线之一 | 第三条产品线（未交付） |
-| 路径 | `lauren-omb-pack/` 三角色 | `lauren-omb-pack/team-v0.2/`（历史目录名） | 待定 |
+| 路径 | `lauren-omb-pack/` 三角色 | `lauren-omb-pack/team/` | 待定 |
 | 导入文件 | `lauren-lite.botmrr.md` | `lauren-team.botmrr.md` | 待定 |
 | 角色 | 幕僚长 / 云端编程助手 / 验证助手 | 上表三角 + Nancy私人助理 + 工程主管Matcha + 工程bot①② stub | 含完整 Eng 等（本期不做） |
 
@@ -70,12 +70,12 @@ python -m lauren_team_kit team-status --root . --team-id demo-t1
 
 1. `git clone https://github.com/QIANBIMAX/lauren-bot-team.git`
 2. OMB（建议 0.1.140）→ Templates → Import：
-   - 优先：`lauren-omb-pack/team-v0.2/lauren-team.botmrr.md`
-   - 兼容：`lauren-omb-pack/team-v0.2/team.mausteam.json`
+   - 优先：`lauren-omb-pack/team/lauren-team.botmrr.md`
+   - 兼容：`lauren-omb-pack/team/team.mausteam.json`
 3. 导入后 skills 默认关、routines 暂停；手动启用；包内无密钥。侧栏应见：幕僚长、云端编程助手、验证助手、Nancy私人助理、工程主管Matcha、工程bot①、工程bot②。日常优先 **私聊幕僚长**。
 4. 终端自检：`bash lauren-team-kit/scripts/t1_dual_task_smoke.sh`（先备 venv）。
 
-**诚实：Mac 0.1.140 真机 GUI 导入验收尚未完成。** 细节见 `lauren-omb-pack/team-v0.2/README.md`。请从公开仓库获取团队包。
+**诚实：Mac 0.1.140 真机 GUI 导入验收尚未完成。** 细节见 `lauren-omb-pack/team/README.md`。请从公开仓库获取团队包。
 
 ## 明确未做
 

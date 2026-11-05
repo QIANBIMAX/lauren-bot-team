@@ -1,4 +1,4 @@
-"""Team v0.2: dual-task protocol under one team run (Nancy + Matcha).
+"""Team: dual-task protocol under one team run (Nancy + Matcha).
 
 Lite triangle (chief/developer/verifier) remains the default path.
 This module is an optional extension: parent team_id + child task_ids.
@@ -215,7 +215,7 @@ def create_team(
     eng_stubs: list[str] | None = None,
     force: bool = False,
 ) -> dict[str, Any]:
-    """Create a Team v0.2 run document + evidence layout."""
+    """Create a Team run document + evidence layout."""
     root_p = Path(root).resolve()
     path = team_path_for(root_p, team_id)
     if path.exists() and not force:
@@ -259,7 +259,7 @@ def create_team(
             "eng_stub_may": list(ENG_STUB_MAY),
             "eng_stub_may_not": list(ENG_STUB_MAY_NOT),
             "note": (
-                "Team v0.2 slice: dual-task + Nancy/Matcha; not Full OMB GUI; "
+                "Team slice: dual-task + Nancy/Matcha; not Full OMB GUI; "
                 "Eng are stubs; role boundaries enforced by role whitelist"
             ),
         },

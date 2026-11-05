@@ -7,7 +7,7 @@
 | 产品线 | BotMRR 文件 | 角色数 | 部署前置 |
 |---|---|---|---|
 | Lite | `lauren-omb-pack/lauren-lite.botmrr.md` | 3 | OMB、所选引擎及共享 kit / Demo |
-| Team | `lauren-omb-pack/team-v0.2/lauren-team.botmrr.md` | 7 | 同上，不需要先导入 Lite |
+| Team | `lauren-omb-pack/team/lauren-team.botmrr.md` | 7 | 同上，不需要先导入 Lite |
 
 Team 已包含 chief、developer、verifier 三个基础角色，并增加 Nancy、Matcha 和两个工程 stub。共用内核不等于依赖另一条线的导入配置。Full 尚未交付。
 

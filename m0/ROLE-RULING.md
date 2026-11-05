@@ -14,12 +14,12 @@ Codex 主稿 `一期技术方案.md` §2 旧「Worker/Nancy」已作废并改正
 
 ---
 
-## Team 产品线（平行线；目录名仍为 team-v0.2）
+## Team 产品线（平行线）
 
 Lite 与 Team 是 **两条平行产品线**（Full 为未来第三条）。Nancy / Matcha / Eng stub **仅**落在 Team 材料目录，不写进 Lite 根包：
 
-- `lauren-omb-pack/team-v0.2/`（导入文件：`lauren-team.botmrr.md`）
+- `lauren-omb-pack/team/`（导入文件：`lauren-team.botmrr.md`）
 - kit：`team-*` CLI / `lauren_team_kit.team`
-- 文档：`docs/team-v0.2.md`、`docs/runs/demo-t1.md`
+- 文档：`docs/team.md`、`docs/runs/demo-t1.md`
 
 **不得**把他们写进 Lite 三角根 manifest，也不得改口称「M0 一开始就含 Nancy/Matcha」。用户 Import 时自选 Lite 或 Team。
