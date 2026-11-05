@@ -139,6 +139,16 @@ def evaluate_verify_gate(task: dict[str, Any]) -> list[str]:
                 continue
             if round_id and c.get("round_id") not in (None, round_id):
                 continue
+            current_fp = verification.get("acceptance_fingerprint")
+            check_fp = c.get("acceptance_fingerprint")
+            if (
+                isinstance(current_fp, str)
+                and current_fp
+                and isinstance(check_fp, str)
+                and check_fp
+                and check_fp != current_fp
+            ):
+                continue
             by_id[c["acceptance_id"]] = c
 
         if must_ids and not by_id and checks:
