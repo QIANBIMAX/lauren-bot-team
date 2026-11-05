@@ -50,6 +50,20 @@ python -m lauren_team_kit team-status --root . --team-id demo-t1
 
 烟雾：`bash lauren-team-kit/scripts/t1_dual_task_smoke.sh`
 
+
+## OMB 部署
+
+主路径：**GitHub clone → OMB Import Team 版**。
+
+1. `git clone https://github.com/QIANBIMAX/lauren-bot-team.git`
+2. OMB（建议 0.1.140）→ Templates → Import：
+   - 优先：`lauren-omb-pack/team-v0.2/lauren-team-v0.2.botmrr.md`
+   - 兼容：`lauren-omb-pack/team-v0.2/team.mausteam.json`
+3. 导入后 skills 默认关、routines 暂停；手动启用；包内无密钥。
+4. 终端自检：`bash lauren-team-kit/scripts/t1_dual_task_smoke.sh`（先备 venv）。
+
+**诚实：Mac 0.1.140 真机 GUI 导入验收尚未完成。** 细节见 `lauren-omb-pack/team-v0.2/README.md`。F 盘整夹拷贝仅作附录，不是主路径。
+
 ## 明确未做
 
 - 四个完整 Eng 实现

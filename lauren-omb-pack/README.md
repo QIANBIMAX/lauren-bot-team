@@ -1,10 +1,34 @@
 # lauren-omb-pack
 
-OpenMausBot 可导入团队包（数据/配置，非 OMB 源码）。
+OpenMausBot **可导入**团队包（数据/配置，非 OMB 源码）。
 
 **零基础请先看：** [docs/新手入门.md](../docs/新手入门.md) · [docs/安装指南.md](../docs/安装指南.md)
 
-## 三角色
+主路径：**GitHub clone → OMB Import**（BotMRR / mausteam）。手工粘贴 instructions 仅作兜底。
+
+> **诚实声明：Mac 0.1.140 真机 GUI 导入 / 委派 / 重启恢复——尚未在本项目验收通过。**  
+> 下列文件是按上游格式准备的可导入物；菜单名若不同，以 OMB 界面为准。
+
+## 两套导入物
+
+| 版本 | BotMRR（优先） | 旧格式兼容 | 角色 |
+|---|---|---|---|
+| **Lite（默认三角）** | [`lauren-lite.botmrr.md`](lauren-lite.botmrr.md) | [`team.mausteam.json`](team.mausteam.json) | 幕僚长 / 开发助手 / 验证助手 |
+| **Team v0.2（扩展）** | [`team-v0.2/lauren-team-v0.2.botmrr.md`](team-v0.2/lauren-team-v0.2.botmrr.md) | [`team-v0.2/team.mausteam.json`](team-v0.2/team.mausteam.json) | 上表三角 + Nancy / Matcha / Eng stub |
+
+Team **不是**把一期三角根包改成强制五角色；它是独立扩展切片。详见 [`team-v0.2/README.md`](team-v0.2/README.md)。
+
+## 建议导入步骤（摘要）
+
+1. `git clone https://github.com/QIANBIMAX/lauren-bot-team.git`
+2. 打开 OpenMausBot（Mac 建议 **0.1.140**）
+3. **Templates → Import**（或同等菜单）→ 选上表对应的 `.botmrr.md`；若 0.1.140 更认旧格式，改选 `.mausteam.json`
+4. 导入后：skills 默认关、routines 暂停；手动启用；包内无密钥
+5. 终端自检（Team）：`bash lauren-team-kit/scripts/t1_dual_task_smoke.sh`（先按安装指南备 venv）
+
+## 手工粘贴（兜底）
+
+若 Import 不可用，仍可按角色分别粘贴：
 
 | 文件 | 角色 |
 |---|---|
@@ -12,24 +36,10 @@ OpenMausBot 可导入团队包（数据/配置，非 OMB 源码）。
 | `bots/developer.instructions.md` | 开发助手 |
 | `bots/verifier.instructions.md` | 验证助手 |
 
-子目录 `bots/{chief,developer,verifier}/SOUL.md` 为补充人格草案。
+Team 角色说明在 `team-v0.2/bots/`。Group 参考 `groups/lauren-core.md` / `team-v0.2/groups/`。
 
-## 导入说明（建议操作）
+## 清单
 
-> **诚实声明：三角色在 OMB 里的 GUI 正式导入、委派、重启恢复——尚未在本项目验收通过。**  
-> 程序接口写入会被拒，需桌面端操作。下列步骤是建议做法；菜单名若不同，以 OMB 界面为准。
-
-1. 打开本机 OpenMausBot（Mac 建议 **0.1.140**）。
-2. 按 Templates / Teams 或桌面「新建 bot」流程，分别粘贴各 `*.instructions.md`（及对应 `SOUL.md`）。
-3. Group 成员与串行分工参考 `groups/lauren-core.md`（幕僚长拆任务 → 开发改 → 验证跑门禁；验证未过不得宣称完成）。
-4. Skills 文本在 `skills/*/SKILL.md`（受 OMB 数量限制，先放三个）。
-
-即使这一步暂时做不成，仍可用终端跑 `demo-app` 的 C1/C2/C3 演示（见新手入门第 7 节）先看懂闭环。
-
-## 清单对照
-
-见 `team.manifest.md`。兼容与延后项见 `../docs/compatibility.md`。
-
-## Team v0.2 扩展
-
-可选旁路包见 [`team-v0.2/`](team-v0.2/)。**不是**本三角根包的一部分；Lite 默认仍只用幕僚长/开发/验证。
+- Lite：`team.manifest.md`
+- Team：`team-v0.2/team.manifest.md`
+- 兼容与延后：`../docs/compatibility.md`

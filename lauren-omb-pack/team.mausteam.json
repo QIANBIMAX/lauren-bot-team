@@ -1,0 +1,48 @@
+{
+  "format": "openmaus.team",
+  "version": 1,
+  "team": {
+    "name": "Lauren Lite",
+    "description": "Lite triangle only: chief / developer / verifier. must_run hard gates; confirm-before-local Demo merge; routines paused; no secrets. Nancy/Matcha/Eng are Team v0.2, not this pack.",
+    "members": [
+      {
+        "key": "chief",
+        "name": "幕僚长",
+        "title": "幕僚长",
+        "description": "Unified entry; task protocol; status; merge request after precheck. Hard ban: no fake pass; no solo budget raise.",
+        "appearance": {
+          "color": "purple",
+          "mascotExpression": "focused"
+        }
+      },
+      {
+        "key": "developer",
+        "name": "开发助手",
+        "title": "开发助手",
+        "description": "Implement in worktree; self-check; artifact.commit. Hard ban: no integration merge; no flipping must_run.",
+        "appearance": {
+          "color": "green",
+          "mascotExpression": "thinking"
+        }
+      },
+      {
+        "key": "verifier",
+        "name": "验证助手",
+        "title": "验证助手",
+        "description": "Execute must_run; bind commit; evidence. Hard ban: never pass without running must_run.",
+        "appearance": {
+          "color": "orange",
+          "mascotExpression": "curious"
+        }
+      }
+    ],
+    "room": {
+      "name": "Lauren Lite Room",
+      "bulletin": "Lite default — only chief/developer/verifier. No fake pass. Routines paused. No secrets. Team roles live in team-v0.2.",
+      "defaultResponder": {
+        "kind": "member",
+        "member": "chief"
+      }
+    }
+  }
+}
