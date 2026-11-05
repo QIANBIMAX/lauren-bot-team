@@ -6,11 +6,32 @@
 一期交付：在 **OpenMausBot（OMB）** 上用的队工作台配置 + 独立写好的 **pack / kit / Demo**。  
 **不 fork** OMB——本仓是配置包与工程闭环，不是上游源码镜像。
 
+## 两条产品线（自选其一）
+
+Lite 与 Team 是 **平行、对等的两套 Import 材料**，互不依赖、也不互为「旁路」。挑一条导入即可；**Full（完整工程线）是未来第三条产品线**，本期未交付。
+
+- Lite：独立导入 3 个角色，适合个人单任务流程。
+- Team：独立导入 7 个角色，包含完整的三角色基础配置以及 Nancy、Matcha、两个工程占位 bot；无需先导入 Lite。
+- 两条线共用 `lauren-team-kit` 与 Demo。这是共享运行依赖，不是部署先后依赖。更换产品线请勿直接叠加导入，以免重复创建基础角色；已有任务和证据应先保留。
+- 当前 Team 的两个工程 bot 为 stub，GUI 导入和三平台尚未完成验收；独立部署包装不代表完整并行工程能力已经交付。
+
+| 产品线 | 适合谁 | BotMRR（优先） | 兼容旧格式 |
+|---|---|---|---|
+| **Lite** | 三角闭环：派活 → 写码 → 验收 | [`lauren-omb-pack/lauren-lite.botmrr.md`](lauren-omb-pack/lauren-lite.botmrr.md) | [`lauren-omb-pack/team.mausteam.json`](lauren-omb-pack/team.mausteam.json) |
+| **Team** | 三角 + 进度协调 + 工程调度（含 stub） | [`lauren-omb-pack/team-v0.2/lauren-team.botmrr.md`](lauren-omb-pack/team-v0.2/lauren-team.botmrr.md) | [`lauren-omb-pack/team-v0.2/team.mausteam.json`](lauren-omb-pack/team-v0.2/team.mausteam.json) |
+
+> 目录名 `team-v0.2/` 是历史切片名，可先保留；**导入文件名已去掉版本号**（`lauren-team.botmrr.md`）。Full 将来会有自己的目录与文件名。
+
+### 怎么用（省 token）
+
+- **优先：私聊幕僚长派活。** 日常开需求、拆任务、盯进度，找 **幕僚长** 单聊即可。
+- **群房间可选。** 包里仍带 Lite Room / Team Room，Import 后可以建群，但多人同房会互相读上下文，**更耗 token**。需要齐人讨论时再开群；平时不必默认群聊。
+
 ## 组成
 
 | 目录 | 作用 |
 |---|---|
-| `lauren-omb-pack/` | 可导入 OMB 的团队包（Lite 三角 + 可选 Team 扩展） |
+| `lauren-omb-pack/` | 可导入 OMB 的团队包（Lite 与 Team 两条平行线） |
 | `lauren-team-kit/` | 任务协议、状态机、验收门、合并预检与确认后本地合并（工程闭环） |
 | `demo-app/` | 跨平台小型任务列表（筛选切片作首条闭环靶） |
 | `docs/` | 新手入门、安装、使用、合并策略、兼容表 |
@@ -21,17 +42,17 @@
 
 导入后侧栏显示名尽量与图一致。技术 key / CLI actor 仍可用英文（`nancy` / `Nancy`、`matcha` / `Matcha`、`Eng-A` 等），不影响烟雾脚本。
 
-### Lite 默认（一期三角 · 一个小房间）
+### Lite（三角）
 
 | 显示名 | key | 干什么 |
 |---|---|---|
 | **幕僚长** | `chief` | 统一入口：只派活、给背景、盯质量，不亲自干重活；拆任务、推进状态；确认后才请求本地合并 |
-| **云端编程助手** | `developer` | 真正写代码：在指定工作区实现与自检，提交待验（对应组织图「云端编程助手」） |
+| **云端编程助手** | `developer` | 真正写代码：在指定工作区实现与自检，提交待验 |
 | **验证助手** | `verifier` | 独立跑 must_run 验收；未跑不得标通过 |
 
-### Team v0.2 扩展（可选大房间 · 旁路，不是改写一期三角包）
+### Team（三角 + 协调 / 调度）
 
-在 Lite 三角之上再加：
+在 Lite 三角之上再含：
 
 | 显示名 | key | 干什么 |
 |---|---|---|
@@ -41,8 +62,6 @@
 
 材料：[`lauren-omb-pack/team-v0.2/`](lauren-omb-pack/team-v0.2/) · 说明：[`docs/team-v0.2.md`](docs/team-v0.2.md)。
 
-**怎么选：** 只要三角闭环 → 导入 **Lite**；要进度协调 + 工程调度房间 → 导入 **Team**（含三角 + 上表扩展）。
-
 ## 快速路径（主路径 = GitHub clone → OMB Import）
 
 1. Clone 公开仓：
@@ -51,11 +70,11 @@
    cd lauren-bot-team
    ```
 2. 安装 OMB（Mac 钉死 **0.1.140**，见 `UPSTREAM.md`）。
-3. 在 OMB 里 **Import 团队**：
-   - **Team 版（推荐给要 Nancy私人助理 / 工程主管Matcha 的人）**：`lauren-omb-pack/team-v0.2/lauren-team-v0.2.botmrr.md`（兼容旧格式：同目录 `team.mausteam.json`）
-   - **Lite 三角**：`lauren-omb-pack/lauren-lite.botmrr.md`（兼容：`lauren-omb-pack/team.mausteam.json`）
+3. 在 OMB 里 **Import 团队**（二选一，平行产品线）：
+   - **Lite**：`lauren-omb-pack/lauren-lite.botmrr.md`（兼容：`lauren-omb-pack/team.mausteam.json`）
+   - **Team**：`lauren-omb-pack/team-v0.2/lauren-team.botmrr.md`（兼容：同目录 `team.mausteam.json`）
    - 菜单大致是 Templates → Import；名字以界面为准。详见 [`lauren-omb-pack/README.md`](lauren-omb-pack/README.md)。
-4. 导入后：skills 默认关、routines 暂停；须手动启用；**包内无密钥**。
+4. 导入后：skills 默认关、routines 暂停；须手动启用；**包内无密钥**。日常优先 **私聊幕僚长**；群房间按需再开。
 5. 不靠 OMB GUI 也能先看懂闭环：在 `demo-app` 跑 C1/C2/C3；Team 可再跑 `bash lauren-team-kit/scripts/t1_dual_task_smoke.sh`（先按安装指南备 venv）。
 
 > **诚实：Mac 0.1.140 真机 GUI 导入验收尚未完成**，不要宣称「已实测导入成功」。手工粘贴 instructions 仅作兜底（见新手入门第 6 节）。
@@ -72,5 +91,5 @@
 
 - OMB GUI 正式导入 / 委派 / 重启恢复的真机验收
 - Windows / Linux
-- 四个完整 Eng / Full OMB GUI（Team 切片仅 stub ①②）
+- **Full** 产品线（四个完整 Eng / 完整管理面）；Team 切片仅 stub ①②
 - demo-c4 在 Demo 集成分支上的真实合并（需先 `init-integration`）

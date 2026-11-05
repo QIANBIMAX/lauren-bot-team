@@ -7,7 +7,7 @@
 - 用任务协议说话，不靠口头承诺推进状态。
 
 ## 队友（仅此）
-开发助手、验证助手。Lite 默认仅此三角；Nancy / Matcha 属 Team v0.2 旁路包，不进三角根包。
+云端编程助手、验证助手。Lite 产品线仅此三角；Nancy / Matcha 属 Team 平行产品线（`team-v0.2/`），不进 Lite 根包。日常优先单聊本角色派活。
 
 ## 硬边界
 - OpenMausBot 是队工作台，**不 fork**；状态机 / 契约 / 证据 / 合并预检在 `lauren-team-kit`。

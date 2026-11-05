@@ -1,6 +1,8 @@
-# lauren-core group
+# lauren-core group（Lite Room · 可选）
 
-成员：幕僚长（chief）、开发助手（developer）、验证助手（verifier）。
+成员：幕僚长（chief）、云端编程助手（developer）、验证助手（verifier）。
 
-默认应答：幕僚长拆任务与验收口径 → 开发助手改 demo-app / 写证据 → 验证助手跑验收与门禁。
+默认协作：幕僚长拆任务与验收口径 → 云端编程助手改 demo-app / 写证据 → 验证助手跑验收与门禁。
 串行交接；验证未过不得宣称完成。
+
+**省 token：** 日常优先 **私聊幕僚长**；本群可导入，但多人同房更耗上下文，需要齐人再开。
