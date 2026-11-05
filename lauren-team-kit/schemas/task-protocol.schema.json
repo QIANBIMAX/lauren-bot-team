@@ -155,6 +155,24 @@
         },
         "branch": {
           "type": "string"
+        },
+        "created": {
+          "type": "boolean",
+          "description": "Lite-C: true after real git worktree create/verify"
+        },
+        "created_at": {
+          "type": "string"
+        },
+        "verified_at": {
+          "type": "string"
+        },
+        "base_repo": {
+          "type": "string",
+          "description": "Git base repo used for worktree add"
+        },
+        "protocol_only": {
+          "type": "boolean",
+          "description": "Deprecated/debug: path field only; must not be true for real start"
         }
       }
     },
@@ -575,6 +593,72 @@
     "parent_task_id": {
       "type": "string",
       "description": "Optional TOP-LEVEL parent task id for hierarchy (e.g. Eng handoff to developer). MUST NOT be nested under team (team.additionalProperties=false). Distinct from team.team_id."
+    },
+    "executor_lease": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Lite-C L5: executor lease for cancel/reconcile (protocol-level; OS kill not claimed verified)",
+      "properties": {
+        "holder": {
+          "type": "string"
+        },
+        "pid": {
+          "type": "integer"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "active",
+            "released",
+            "cancel_requested",
+            "cancelled",
+            "stale"
+          ]
+        },
+        "acquired_at": {
+          "type": "string"
+        },
+        "heartbeat_at": {
+          "type": "string"
+        },
+        "released_at": {
+          "type": "string"
+        },
+        "release_reason": {
+          "type": "string"
+        },
+        "cancel_requested": {
+          "type": "boolean"
+        },
+        "cancel_requested_at": {
+          "type": "string"
+        },
+        "note": {
+          "type": "string"
+        }
+      }
+    },
+    "cancel": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Lite-C: cancel evidence blob (os_kill_verified must stay honest)",
+      "properties": {
+        "at": {
+          "type": "string"
+        },
+        "actor": {
+          "type": "string"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "os_kill_verified": {
+          "type": "boolean"
+        },
+        "note": {
+          "type": "string"
+        }
+      }
     }
   },
   "allOf": [

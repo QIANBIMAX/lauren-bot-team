@@ -121,18 +121,16 @@ def test_merge_happy_path(tmp_path: Path, capsys):
     task2 = load_task(path)
     assert task2["status"] == "已完成"
     assert task2.get("merge", {}).get("method") in ("ff", "no-ff")
-    integ = _git(wt, "rev-parse", "demo/integration")
-    assert _git(wt, "merge-base", "--is-ancestor", feature, integ) == "" or True
-    # verify ancestor
+    # verify feature is ancestor of integration tip (real check)
     r = subprocess.run(
         ["git", "-C", str(wt), "merge-base", "--is-ancestor", feature, "demo/integration"],
         check=False,
     )
     assert r.returncode == 0
-    assert (wt / "hello.txt").read_text(encoding="utf-8") == "ping\n" or True
     # file on integration tip
     _git(wt, "checkout", "demo/integration")
     assert (wt / "hello.txt").is_file()
+    assert (wt / "hello.txt").read_text(encoding="utf-8") == "ping\n"
     report = path.parent / "merge" / "report.json"
     assert report.is_file()
 

@@ -27,6 +27,13 @@ from lauren_team_kit.resume import (
     block_task,
     resume_task,
 )
+from lauren_team_kit.runtime import (
+    RuntimeGateError,
+    acquire_lease,
+    cancel_task,
+    resume_with_reconcile,
+)
+from lauren_team_kit.worktree_ops import WorktreeError, ensure_task_worktree
 from lauren_team_kit.budget import (
     BudgetError,
     evaluate_budget,
@@ -470,9 +477,10 @@ def cmd_block(args: argparse.Namespace) -> int:
 
 
 def cmd_resume(args: argparse.Namespace) -> int:
-    """Leave 受阻 toward stored or overridden resume_point (Lite L3).
+    """Leave 受阻 toward stored or overridden resume_point (Lite L3/L5).
 
-    Resume → 执行中 also applies Lite L4 budget hard gate (same as transition).
+    Lite-C: run lease/Git reconcile first; unknown → stay 受阻, no silent re-exec.
+    Resume → 执行中 still passes L4 budget hard gate.
     """
     path = _resolve_or_exit(args)
     if isinstance(path, int):
@@ -480,48 +488,54 @@ def cmd_resume(args: argparse.Namespace) -> int:
     if not path.is_file():
         print(f"找不到 task: {path}", file=sys.stderr)
         return 1
-    if args.to is not None and args.to not in RESUME_POINTS:
-        print(
-            f"非法 --to: {args.to!r}；允许: {', '.join(sorted(RESUME_POINTS))}",
-            file=sys.stderr,
-        )
-        return 2
     task = load_task(path)
     auto_block = not getattr(args, "no_budget_block", False)
+    root = _root_from_args(args, path)
+    skip_rec = bool(getattr(args, "skip_reconcile", False))
     try:
-        updated, report = resume_task(
-            task,
-            actor=args.actor,
-            to_status=args.to,
-            clear_blocker_code=args.clear_blocker_code,
-            auto_block=auto_block,
-        )
+        if root is not None and not skip_rec:
+            updated, report = resume_with_reconcile(
+                task,
+                root=root,
+                actor=args.actor,
+                to_status=getattr(args, "to", None),
+                clear_blocker_code=getattr(args, "clear_blocker_code", None),
+                auto_block=auto_block,
+            )
+        else:
+            updated, report = resume_task(
+                task,
+                actor=args.actor,
+                to_status=getattr(args, "to", None),
+                clear_blocker_code=getattr(args, "clear_blocker_code", None),
+                auto_block=auto_block,
+            )
     except BlockResumeError as e:
         print(str(e), file=sys.stderr)
         return 1
-    except IllegalTransitionError as e:
+    except RuntimeGateError as e:
         print(str(e), file=sys.stderr)
         return 1
-    except BudgetError as e:
-        print(str(e), file=sys.stderr)
-        return 1
-    if report.get("action") in ("resumed", "budget_blocked"):
+
+    action = report.get("action")
+    if action in ("resumed", "budget_blocked", "reconcile_blocked") or report.get("resume", {}).get("action") in (
+        "resumed",
+        "budget_blocked",
+    ):
         save_task(path, updated)
-    report_out = {
-        **report,
-        "task_file": str(path),
-        "status": updated.get("status"),
-    }
-    print(json.dumps(report_out, ensure_ascii=False, indent=2))
-    if report.get("already_have_artifact"):
-        print("already_have_artifact=true（勿重复提交）")
+    # flatten nested resume report for printing
+    flat = report.get("resume") if isinstance(report.get("resume"), dict) else report
+    print(json.dumps({"path": str(path), **{k: report.get(k) for k in ("action", "to_status", "reconcile")}, "resume": flat}, ensure_ascii=False, indent=2))
     print(
-        f"resume {path}: {report.get('from_status')} → {updated.get('status')} "
-        f"(action={report.get('action')})"
+        f"resume {path}: {report.get('from_status') or flat.get('from_status')} → {updated.get('status')} "
+        f"action={report.get('action') or flat.get('action')}"
     )
-    if report.get("action") == "budget_blocked":
+    if (report.get("action") == "reconcile_blocked") or (
+        flat.get("action") == "budget_blocked"
+    ):
         return 1
     return 0
+
 
 
 def cmd_record_check(args: argparse.Namespace) -> int:
@@ -1347,6 +1361,81 @@ def cmd_team_set_deps(args: argparse.Namespace) -> int:
 
 
 
+def cmd_prepare_worktree(args: argparse.Namespace) -> int:
+    """Create/verify a real git worktree under the controlled runs path (Lite-C L5)."""
+    path = _resolve_or_exit(args)
+    if isinstance(path, int):
+        return path
+    if not path.is_file():
+        print(f"找不到 task: {path}", file=sys.stderr)
+        return 1
+    root = _root_from_args(args, path)
+    if root is None:
+        print("prepare-worktree 需要 --root（或标准 workspace/runs 布局）", file=sys.stderr)
+        return 2
+    task = load_task(path)
+    try:
+        updated, report = ensure_task_worktree(
+            task,
+            root=root,
+            base_repo=getattr(args, "base_repo", None),
+            bootstrap_base=not bool(getattr(args, "no_bootstrap", False)),
+        )
+    except WorktreeError as e:
+        print(str(e), file=sys.stderr)
+        return 1
+    save_task(path, updated)
+    print(json.dumps({"path": str(path), "worktree": updated.get("worktree"), "report": report}, ensure_ascii=False, indent=2))
+    print(f"prepare-worktree {path}: action={report.get('action')}")
+    return 0
+
+
+def cmd_cancel(args: argparse.Namespace) -> int:
+    """Cancel task: 已取消 + lease cancel_requested (+ best-effort SIGTERM). Lite-C L5."""
+    path = _resolve_or_exit(args)
+    if isinstance(path, int):
+        return path
+    if not path.is_file():
+        print(f"找不到 task: {path}", file=sys.stderr)
+        return 1
+    task = load_task(path)
+    root = _root_from_args(args, path)
+    try:
+        updated, report = cancel_task(
+            task,
+            actor=args.actor,
+            reason=getattr(args, "reason", None),
+            signal_process=not bool(getattr(args, "no_signal", False)),
+            root=root,
+        )
+    except RuntimeGateError as e:
+        print(str(e), file=sys.stderr)
+        return 1
+    save_task(path, updated)
+    print(json.dumps({"path": str(path), **report, "cancel": updated.get("cancel")}, ensure_ascii=False, indent=2))
+    print(f"cancelled {path}: {report.get('from_status')} → 已取消")
+    return 0
+
+
+def cmd_acquire_lease(args: argparse.Namespace) -> int:
+    """Record an active executor lease (protocol-level; Lite-C)."""
+    path = _resolve_or_exit(args)
+    if isinstance(path, int):
+        return path
+    if not path.is_file():
+        print(f"找不到 task: {path}", file=sys.stderr)
+        return 1
+    task = load_task(path)
+    pid = getattr(args, "pid", None)
+    updated = acquire_lease(
+        task, holder=args.holder, pid=pid, note=getattr(args, "note", None)
+    )
+    save_task(path, updated)
+    print(json.dumps(updated.get("executor_lease"), ensure_ascii=False, indent=2))
+    return 0
+
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="lauren-team-kit",
@@ -1536,6 +1625,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--no-budget-block",
         action="store_true",
         help="恢复到执行中时预算违规直接拒绝（不追加 blockers）",
+    )
+    p_rs.add_argument(
+        "--skip-reconcile",
+        action="store_true",
+        help="跳过 Lite-C 租约/Git 对账（仅排障；默认对账）",
     )
     p_rs.set_defaults(func=cmd_resume)
 
@@ -1855,6 +1949,43 @@ def build_parser() -> argparse.ArgumentParser:
     p_br.add_argument("--actor", default="Nancy")
     p_br.add_argument("--note", default=None)
     p_br.set_defaults(func=cmd_team_blocker_resolve)
+
+    p_pwt = sub.add_parser(
+        "prepare-worktree",
+        help="创建/校验真实 Git worktree（Lite-C L5）",
+    )
+    _add_task_selectors(p_pwt)
+    p_pwt.add_argument("--base-repo", default=None, help="git worktree 的基仓库；默认识别 --root 或自举 seed")
+    p_pwt.add_argument(
+        "--no-bootstrap",
+        action="store_true",
+        help="禁止在无 git 根时自举 runs/<id>/_seed_repo",
+    )
+    p_pwt.set_defaults(func=cmd_prepare_worktree)
+
+    p_cancel = sub.add_parser(
+        "cancel",
+        help="取消任务：→已取消并请求停止租约（Lite-C L5；不宣称 OS 杀进程已验收）",
+    )
+    _add_task_selectors(p_cancel)
+    p_cancel.add_argument("--actor", default="chief")
+    p_cancel.add_argument("--reason", default=None)
+    p_cancel.add_argument(
+        "--no-signal",
+        action="store_true",
+        help="只写 cancel_requested，不发 SIGTERM",
+    )
+    p_cancel.set_defaults(func=cmd_cancel)
+
+    p_lease = sub.add_parser(
+        "acquire-lease",
+        help="登记执行器租约（Lite-C；协议层）",
+    )
+    _add_task_selectors(p_lease)
+    p_lease.add_argument("--holder", required=True)
+    p_lease.add_argument("--pid", type=int, default=None)
+    p_lease.add_argument("--note", default=None)
+    p_lease.set_defaults(func=cmd_acquire_lease)
 
     return parser
 

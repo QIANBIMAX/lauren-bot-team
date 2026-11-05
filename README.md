@@ -88,6 +88,16 @@ Lite 与 Team 是 **平行、对等的两套 Import 材料**，互不依赖、�
 - 公开仓：<https://github.com/QIANBIMAX/lauren-bot-team.git>  
   获取方式：clone 本仓库。
 
+
+## Lite 发布与恢复（Lite-E）
+
+- 可勾选清单：[`docs/lite-release-checklist.md`](docs/lite-release-checklist.md)（对照审计 §六；未测项标预览限制）
+- 故障恢复：[`docs/lite-failure-recovery.md`](docs/lite-failure-recovery.md)（取消 / 预算受阻 / 缺 jsonschema / resume 对账）
+- 平台矩阵：[`docs/platforms.md`](docs/platforms.md)
+- 静态包自检：`cd lauren-team-kit && python scripts/validate_lite_pack.py` → `LITE PACK OK`
+
+新人 **只 Import Lite**：[`lauren-omb-pack/lauren-lite.botmrr.md`](lauren-omb-pack/lauren-lite.botmrr.md)（兼容 `team.mausteam.json`）。**OMB GUI 真机导入仍未验收。**
+
 ## 延后项（诚实）
 
 - OMB GUI 正式导入 / 委派 / 重启恢复的真机验收

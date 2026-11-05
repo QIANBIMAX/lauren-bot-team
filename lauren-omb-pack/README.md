@@ -35,6 +35,17 @@ Team 使用无版本号目录与导入文件。详见 [团队说明](team/README
 4. 导入后：skills 默认关、routines 暂停；手动启用；包内无密钥；日常找 **幕僚长** 单聊
 5. 终端自检（Team）：`bash lauren-team-kit/scripts/t1_dual_task_smoke.sh`（先按安装指南备 venv）
 
+
+## Lite 干净导入（Lite-E）
+
+1. clone 本仓后，OMB **Templates → Import** → 选本目录 [`lauren-lite.botmrr.md`](lauren-lite.botmrr.md)（不要选 `team/` 下 Team 包，除非你要 Team）。
+2. 导入后手动启用 skills；routines 默认暂停；**包内无密钥**。
+3. 日常私聊 **幕僚长**；三角 = 幕僚长 / 云端编程助手 / 验证助手。
+4. 终端静态自检（不替代 GUI）：在仓库 `lauren-team-kit` 下执行 `python scripts/validate_lite_pack.py`。
+5. 发布勾选 / 故障恢复：[`../docs/lite-release-checklist.md`](../docs/lite-release-checklist.md)、[`../docs/lite-failure-recovery.md`](../docs/lite-failure-recovery.md)。
+
+> **预览限制：** Mac 0.1.140 真机 GUI 导入 / 委派 / 重启 — **尚未验收**。Win/Linux — **未测**。
+
 ## 手工粘贴（兜底）
 
 若 Import 不可用，仍可按角色分别粘贴：

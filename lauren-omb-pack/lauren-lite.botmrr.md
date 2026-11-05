@@ -22,7 +22,7 @@ outcomes:
 setupMinutes: 5
 requirements:
   platforms:
-    - any
+    - any  # Lite-D: "any" = unrestricted field only; NOT Win/Linux/GUI verified — see docs/compatibility.md
   apps:
     - slug: github
       label: GitHub

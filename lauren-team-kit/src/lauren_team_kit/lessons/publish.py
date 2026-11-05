@@ -156,6 +156,32 @@ def make_rules_version(content_hash: str, *, major: int = 1) -> str:
     return f"{major}-{content_hash[:16]}"
 
 
+
+def _normalize_examples(
+    examples: dict[str, Any] | None,
+) -> dict[str, Any] | None:
+    """Optional positive/negative samples for rule traceability (Lite-D L7)."""
+    if examples is None:
+        return None
+    if not isinstance(examples, dict):
+        raise LessonError("examples 须为 dict，含 positive / negative 列表")
+    pos = examples.get("positive") or examples.get("correct") or []
+    neg = examples.get("negative") or examples.get("wrong") or []
+    if not isinstance(pos, list) or not isinstance(neg, list):
+        raise LessonError("examples.positive / examples.negative 须为 list")
+    if not pos and not neg:
+        raise LessonError("examples 至少提供 positive 或 negative 之一")
+    out: dict[str, Any] = {
+        "positive": [str(x) for x in pos],
+        "negative": [str(x) for x in neg],
+    }
+    # preserve extras
+    for k, v in examples.items():
+        if k not in ("positive", "negative", "correct", "wrong") and k not in out:
+            out[k] = v
+    return out
+
+
 def add_candidate(
     task: dict[str, Any],
     *,
@@ -169,6 +195,8 @@ def add_candidate(
     applies_to: dict[str, Any] | str | None = None,
     probe: dict[str, Any] | str | None = None,
     probe_ref: str | None = None,
+    examples: dict[str, Any] | None = None,
+    source_failure: str | None = None,
 ) -> dict[str, Any]:
     if not lesson_id or not str(lesson_id).strip():
         raise LessonError("lesson_id 必填")
@@ -177,6 +205,7 @@ def add_candidate(
     lesson_id = str(lesson_id).strip()
     probe_doc = _normalize_probe(probe, probe_ref)
     scope_doc = _normalize_scope(scope, applies_to)
+    examples_doc = _normalize_examples(examples)
 
     task = dict(task)
     lessons = _lessons(task)
@@ -200,6 +229,10 @@ def add_candidate(
         "probe": probe_doc,
         "probe_ref": probe_doc.get("ref") or probe_doc.get("description"),
     }
+    if examples_doc is not None:
+        cand["examples"] = examples_doc
+    if source_failure:
+        cand["source_failure"] = str(source_failure).strip()
     if rule_body is not None:
         cand["rule_body"] = rule_body
     if proposed_rule_path:
@@ -344,6 +377,8 @@ def publish_candidate(
         "probe": cand.get("probe"),
         "probe_ref": cand.get("probe_ref"),
         "probe_result": cand.get("probe_result") or cand.get("review_evidence"),
+        "examples": cand.get("examples"),
+        "source_failure": cand.get("source_failure"),
         "rules_version": rules_version,
         "content_hash": chash,
         "version": rules_version,
@@ -361,6 +396,8 @@ def publish_candidate(
             "scope",
             "probe",
             "probe_ref",
+            "examples",
+            "source_failure",
         )
         if k in cand
     }

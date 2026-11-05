@@ -1,4 +1,11 @@
 #!/usr/bin/env bash
+# =============================================================================
+# 【历史样例 / HISTORICAL SAMPLE — 非正式验收】Lite-D L8
+# 本脚本保留作 C2 接线烟雾与 run 目录演示；使用占位 commit（c2fixed01），
+# 与真实 Git merge-precheck 不匹配。正式验收请用 pytest：
+#   lauren-team-kit/tests/test_lite_d.py::test_l8_fail_fix_reverify_real_merge
+# 勿把本脚本 exit 0 当作「真实 commit / 真实合并」通过。
+# =============================================================================
 # C2 kit 接线烟雾：round1 硬门失败→需修改；round2 record-check 通过→验证通过（不真 merge）
 set -euo pipefail
 

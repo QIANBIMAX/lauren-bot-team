@@ -1,35 +1,47 @@
-# lauren-bot-team v0.1 进度（2026-11-05 11:00 Asia/Shanghai）
+# lauren-bot-team v0.1 进度（2026-11-05 14:30 Asia/Shanghai）
 
 公开仓：https://github.com/QIANBIMAX/lauren-bot-team.git（主路径 = clone → OMB Import）  
 
-更新：2026-11-05 13:40 Asia/Shanghai — Lite-B：**L4 resume 预算门已补**（`resume_task`/`cmd_resume` → 执行中 与 `transition_with_budget` 同口径；超预算拒/受阻，不得静默进执行中）。T4–T0 保留。**GUI 真机未完成**。勿 push。
+更新：2026-11-05 14:30 Asia/Shanghai — **Lite-E（独立发布）已补**（落 F，**勿 push**）。干净导入路径文档交叉一致；可勾选发布清单；三平台矩阵诚实；故障恢复文档；静态包校验脚本。**Lite 整包程序侧收口；GUI / 三平台待陛下。**
 
 ## 已齐
-- **T4**：`lesson-add` 须 scope/probe；`lesson-review` 批准须探针证据；publish 规则文件与 store `rules_version`/`content_hash` 一致；`lesson-rule-load`/`lesson-rule-receive` 回执；`test_t4_e2e.py` + `t4_e2e_smoke.sh`；t1 烟雾仅验旧协议/状态
-- **T3**：`team-todo-*` / `team-blocker-resolve`；`summarize_team` 分列 verified/pending_merge/completed；阻塞按 task+reason+open 去重；客观备注「任务待合并，尚未完成」可记；routines:[] 仍须显式创建
-- **T2**：`handoff.py` + CLI（decompose/handoff/ack/rework/omb-delegate）；默认 engineering_chain 拒首席绕过；`eng_stubs` 兼容保留；OMB 多助手委派受阻
-- **T1**：`authz.Principal` 统一入口；`record-check` 可信/diagnostic 分离 + round_id；`already_merged` 须有效验收；Eng 备注仅 assignee；原子 JSON + 集成分支锁
-- 三角色 pack（幕僚长 / 云端编程助手 / 验证助手）instructions + SOUL
-- `lauren-team-kit`：状态机 CLI、must_run 硬门、verify-gate / record-check / merge-precheck、`check-rule` / `preflight`
-- **验证门加固** + **merge-precheck 真实本地 Git** + **真实本地 merge**（confirm；永不默认 push）
-- Demo C1–C5；**Lite L3 demo-c6**；**L4 demo-c7**；**L5 demo-c8**
-- **Lite-B / L4**：`resume` → 执行中 走统一预算硬门（`gate_enter_executing`）；超限拒或 auto_block 留受阻；待执行/待验证恢复不误伤
-- **Team demo-t1**：Team API + 角色硬拦；材料目录 `lauren-omb-pack/team/`（与 Lite 平行）
-- **OMB 可导入物（文件已补，≠ GUI 已验收）**：
-  - Lite：`lauren-omb-pack/lauren-lite.botmrr.md` + `lauren-omb-pack/team.mausteam.json`
-  - Team：`lauren-omb-pack/team/lauren-team.botmrr.md` + `team.mausteam.json`
+- **Lite-E / 独立发布**：`docs/lite-release-checklist.md`（对照 §六 1–8）；`docs/lite-failure-recovery.md`；`docs/platforms.md` 矩阵；`lauren-team-kit/scripts/validate_lite_pack.py` + `tests/test_lite_e.py`
+- **Lite-D / L7–L8**：test_lite_d；正反样例回执；假断言清理；C2/C3 历史样例标注
+- **Lite-C / L5–L6**：真 worktree、原子 RMW、租约取消、resume 对账、Developer 契约
+- **Lite-B / L4**：resume → 执行中 统一预算硬门（已 push `b6dea14`）
+- **Lite-A / L1–L3 等**：共享底座覆盖（重探针结案）
+- **T4–T0** 保留（lessons+E2E / Nancy / handoff / authz / 口径）
+- 三角色 pack；kit 状态机 / verify-gate / merge-precheck / 真实本地 merge（confirm）
+- Demo C1–C8（C2/C3 kit 脚本 = 历史样例）；OMB 可导入物（文件已备 ≠ GUI 已验收）
+
+## Lite 整包结论
+| 段 | 状态 |
+|---|---|
+| Lite-A～D | 程序侧齐（含未提交 C+D+E 工作树） |
+| Lite-E | 文档 + 静态校验齐 |
+| OMB GUI / 委派 / 重启 | **未验收（预览限制）** |
+| Win / Linux | **未测** |
+| Full | **未批开干** |
 
 ## 公开仓
-- `https://github.com/QIANBIMAX/lauren-bot-team.git`
+- https://github.com/QIANBIMAX/lauren-bot-team.git
+- tip（已 push）：`b6dea14`；本机工作树含 Lite-C/D/E **未提交**
 
 ## 延后 / 未验收
-- **OMB GUI 真机导入验收**（BotMRR / mausteam 文件已备，验收未跑）
-- Windows / Linux 三平台新人验收
-- **Full 产品线**（Eng 在任何产品线都不写业务代码；①②拆解转交；③④未建）
-- 真 OS 杀进程级恢复（L3 为协议层模拟）
+- **OMB GUI 真机导入验收**（blocked）
+- Windows / Linux 三平台新人验收（platforms:any 非证据）
+- **真 OS 杀进程 / 断网 / 应用重启**级恢复
+- **Full 产品线**（未批开干）
 
 ## 原则
-装好 OpenMausBot → **自选 Import Lite 或 Team** → 日常 **私聊幕僚长** 派活（群可选）→ 跑 Demo / t1 smoke。未跑过的检查不得标通过。合并默认 confirm，只针对 Demo 本地分支。Nancy私人助理维护进度整本与待办（减负接单；本包 routines:[] 未预置例程条目，需显式创建后再启用）；工程主管Matcha只调度复杂工程；工程bot①②拆解并转交 developer（不做业务实现）。Team：原图核心链 + 可选捷径；默认 engineering_chain（硬禁默认直派）；可选 fast_path 默认关。Lite 仍三角直派。
+装好 OpenMausBot → **自选 Import Lite 或 Team** → 日常 **私聊幕僚长** 派活。未跑过的检查不得标通过。合并默认 confirm。Lite 仍三角直派；Team 默认 engineering_chain。Eng 永不写业务代码。
+
+## 新人只跑 Lite（摘要）
+1. `git clone https://github.com/QIANBIMAX/lauren-bot-team.git`
+2. OMB Import：`lauren-omb-pack/lauren-lite.botmrr.md`（GUI 真机仍待陛下）
+3. 终端最小闭环见 `docs/新手入门.md`；发布勾选见 `docs/lite-release-checklist.md`；故障见 `docs/lite-failure-recovery.md`
+4. 静态自检：`lauren-team-kit` 内 `python scripts/validate_lite_pack.py` → `LITE PACK OK`
 
 ## kit 测试备注
-- 仓库内 `lauren-team-kit/.venv` 可能因路径改名变成空壳；一键测：`python3 -m venv .venv && pip install -e '.[dev]'`（optional-dependencies.dev 含 pytest/jsonschema）。跨卷 shebang 不强制修。
+- 一键测：`python3 -m venv .venv && pip install -e '.[dev]' && pytest -q`
+- Lite-E 目标全量 **≥126**（含 test_lite_e）

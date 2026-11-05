@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any
 
 from lauren_team_kit import SCHEMA_VERSION
-from lauren_team_kit.atomic_io import atomic_write_json
+from lauren_team_kit.atomic_io import atomic_write_json, update_json_file
 from lauren_team_kit.authz import (
     AuthzError,
     Principal,
@@ -89,6 +89,25 @@ def load_task(path: Path | str) -> dict[str, Any]:
 def save_task(path: Path | str, task: dict[str, Any]) -> None:
     """Atomically write task JSON (temp + replace) under a per-file lock."""
     atomic_write_json(path, task)
+
+
+def update_task(
+    path: Path | str,
+    mutator,
+    *,
+    timeout_sec: float = 60.0,
+) -> dict[str, Any]:
+    """Load → mutate → save under one lock (Lite-C L5 concurrent-safe RMW)."""
+
+    def _wrap(current: Any) -> Any:
+        if not isinstance(current, dict):
+            raise ValueError(f"task JSON 必须是 object: {path}")
+        updated = mutator(current)
+        if not isinstance(updated, dict):
+            raise ValueError("update_task mutator 必须返回 dict")
+        return updated
+
+    return update_json_file(path, _wrap, timeout_sec=timeout_sec)
 
 
 def structural_validate(task: dict[str, Any]) -> list[str]:
@@ -177,12 +196,25 @@ def structural_validate(task: dict[str, Any]) -> list[str]:
     return errors
 
 
-def jsonschema_validate(task: dict[str, Any]) -> list[str]:
-    """If jsonschema is installed, run full schema validation; else []."""
+def jsonschema_validate(
+    task: dict[str, Any],
+    *,
+    require: bool = True,
+) -> list[str]:
+    """Run full schema validation.
+
+    Lite-C L6: missing jsonschema dependency is an explicit error when
+    ``require=True`` (default) — never silently skip strict schema checks.
+    """
     try:
-        import jsonschema
+        import jsonschema  # noqa: F401
         from jsonschema import Draft202012Validator
     except ImportError:
+        if require:
+            return [
+                "缺少 jsonschema 依赖；无法做 Schema 校验。"
+                "请 pip install 'lauren-team-kit[schema]' 或 'lauren-team-kit[dev]'"
+            ]
         return []
     try:
         schema = json.loads(schema_path().read_text(encoding="utf-8"))
@@ -199,10 +231,11 @@ def validate_task(
     task: dict[str, Any],
     *,
     strict_verify: bool = False,
+    require_jsonschema: bool = True,
 ) -> list[str]:
     errors = structural_validate(task)
-    # Prefer structural first; still append jsonschema if available
-    js_errors = jsonschema_validate(task)
+    # Prefer structural first; still append jsonschema (required by default)
+    js_errors = jsonschema_validate(task, require=require_jsonschema)
     # Avoid duplicates of obvious required-field noise when structural already failed
     if not errors:
         errors.extend(js_errors)
@@ -341,6 +374,28 @@ def transition_task(
         apply_transition(str(from_status), to_status)
     except IllegalTransitionError:
         raise
+    # Lite-C L5: entering 执行中 requires a real controlled worktree when root known
+    if to_status == "执行中" and root is not None:
+        from lauren_team_kit.worktree_ops import (
+            WorktreeError,
+            ensure_task_worktree,
+            inspect_worktree,
+        )
+
+        insp = inspect_worktree(root, task)
+        if not insp.get("ok"):
+            try:
+                task, _wt_rep = ensure_task_worktree(task, root=root)
+            except WorktreeError as e:
+                raise IllegalTransitionError(
+                    f"进入执行中前工作区未就绪: {e}"
+                ) from e
+            insp = inspect_worktree(root, task)
+            if not insp.get("ok"):
+                raise IllegalTransitionError(
+                    "进入执行中前工作区校验失败: "
+                    + "; ".join(insp.get("errors") or ["unknown"])
+                )
     if to_status == "验证通过":
         assert_verify_gate(task)
     now = _now_iso()

@@ -1,4 +1,4 @@
-"""Atomic JSON writes and cross-process file locks (T1)."""
+"""Atomic JSON writes and cross-process file locks (T1 / Lite-C L5)."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ import os
 import tempfile
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Iterator
+from typing import Any, Callable, Iterator
 
 
 def _lock_path_for(target: Path) -> Path:
@@ -47,31 +47,71 @@ def file_lock(lock_file: Path, *, timeout_sec: float = 60.0) -> Iterator[None]:
         fh.close()
 
 
-def atomic_write_text(path: Path | str, text: str, *, encoding: str = "utf-8") -> None:
+def atomic_write_text_unlocked(
+    path: Path | str, text: str, *, encoding: str = "utf-8"
+) -> None:
+    """Temp + fsync + replace. Caller must already hold the file lock if needed."""
     p = Path(path)
     p.parent.mkdir(parents=True, exist_ok=True)
+    fd, tmp_name = tempfile.mkstemp(
+        dir=str(p.parent), prefix=f".{p.name}.", suffix=".tmp"
+    )
+    try:
+        with os.fdopen(fd, "w", encoding=encoding) as f:
+            f.write(text)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp_name, p)
+    except Exception:
+        try:
+            os.unlink(tmp_name)
+        except OSError:
+            pass
+        raise
+
+
+def atomic_write_text(path: Path | str, text: str, *, encoding: str = "utf-8") -> None:
+    p = Path(path)
     lock = _lock_path_for(p)
     with file_lock(lock):
-        fd, tmp_name = tempfile.mkstemp(
-            dir=str(p.parent), prefix=f".{p.name}.", suffix=".tmp"
-        )
-        try:
-            with os.fdopen(fd, "w", encoding=encoding) as f:
-                f.write(text)
-                f.flush()
-                os.fsync(f.fileno())
-            os.replace(tmp_name, p)
-        except Exception:
-            try:
-                os.unlink(tmp_name)
-            except OSError:
-                pass
-            raise
+        atomic_write_text_unlocked(p, text, encoding=encoding)
+
+
+def atomic_write_json_unlocked(path: Path | str, data: Any) -> None:
+    text = json.dumps(data, ensure_ascii=False, indent=2) + "\n"
+    atomic_write_text_unlocked(path, text)
 
 
 def atomic_write_json(path: Path | str, data: Any) -> None:
     text = json.dumps(data, ensure_ascii=False, indent=2) + "\n"
     atomic_write_text(path, text)
+
+
+def update_json_file(
+    path: Path | str,
+    mutator: Callable[[Any], Any],
+    *,
+    timeout_sec: float = 60.0,
+    default: Any | None = None,
+) -> Any:
+    """Read-modify-write under one lock so concurrent updaters do not clobber.
+
+    ``mutator`` receives the loaded object (or ``default`` if missing) and must
+    return the object to persist.
+    """
+    p = Path(path)
+    lock = _lock_path_for(p)
+    with file_lock(lock, timeout_sec=timeout_sec):
+        if p.is_file():
+            with p.open(encoding="utf-8") as f:
+                current = json.load(f)
+        else:
+            if default is None:
+                raise FileNotFoundError(f"JSON 不存在: {p}")
+            current = default
+        updated = mutator(current)
+        atomic_write_json_unlocked(p, updated)
+        return updated
 
 
 @contextmanager

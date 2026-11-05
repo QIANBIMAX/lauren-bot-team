@@ -1,4 +1,11 @@
 #!/usr/bin/env bash
+# =============================================================================
+# 【历史样例 / HISTORICAL SAMPLE — 非正式验收】Lite-D L8
+# 本脚本保留作 C3 经验复用烟雾；使用占位 commit（c3lesson01），
+# 与真实 Git merge-precheck 不匹配；并依赖既有 run 目录/seed。正式验收请用 pytest：
+#   lauren-team-kit/tests/test_lite_d.py（L7 回执/正反样例 + L8 真实 commit 闭环）
+# 勿把本脚本 exit 0 当作「真实 commit / 真实合并」通过。
+# =============================================================================
 # C3 kit 经验复用烟雾：buggy 注入被规则拦→需修改；fixed 过规则→record-check→验证通过（不真 merge）
 set -euo pipefail
 KIT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
