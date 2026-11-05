@@ -85,8 +85,12 @@ def test_case_collision_does_not_overwrite(tmp_path: Path) -> None:
     create_task(title="筛选甲", task_id="Demo", root=tmp_path)
     with pytest.raises(PathRuleError, match="大小写碰撞"):
         create_task(title="筛选乙", task_id="demo", root=tmp_path)
-    assert (tmp_path / "workspace" / "runs" / "Demo" / "task.json").is_file()
-    assert not (tmp_path / "workspace" / "runs" / "demo").exists()
+    runs = tmp_path / "workspace" / "runs"
+    found = [path for path in runs.iterdir() if path.is_dir()]
+    assert len(found) == 1
+    task = json.loads((found[0] / "task.json").read_text(encoding="utf-8"))
+    assert task["task_id"] == "Demo"
+    assert task["title"] == "筛选甲"
 
 
 def test_newline_digest_collapses_crlf() -> None:

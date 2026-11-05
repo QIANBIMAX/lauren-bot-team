@@ -89,9 +89,13 @@ def test_legacy_shell_is_not_split_and_windows_skips_git_bash(
         return Dummy()
 
     monkeypatch.setattr("lauren_team_kit.exec_run.subprocess.Popen", fake_popen)
-    ran = run_acceptance_item(item, base=tmp_path)
+    # Force the POSIX branch even on Windows CI, where the host itself must
+    # refuse shell. The fake Popen only records argv.
+    ran = run_acceptance_item(item, base=tmp_path, platform="linux")
+    assert ran["outcome"] == "exit"
     assert ran["split_attempted"] is False
     assert ran["command_type"] == "shell"
+    assert ran["argv"] is not None
     assert ran["argv"][1:] == ["-c", command]
     assert "&&" in ran["argv"][-1]
     assert seen["cwd"] == str(tmp_path.resolve())
