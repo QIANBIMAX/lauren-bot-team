@@ -3,6 +3,12 @@
 > 日期：2026-11-05（Asia/Shanghai） · Lite-E  
 > **只标实做过的。** `platforms: any`（BotMRR 字段）≠ 三平台实测。
 
+## 进行中（仍未测）
+
+Windows 11 x64 与 Ubuntu 24.04 x64 的**原生 kit**已开工（不是 VibeX，也不是 Full）。计划见 [`win-linux-development-plan.md`](win-linux-development-plan.md)。当前仓库里只有 doctor 与 Windows 探活隔离的代码，外加 CI 骨架。
+
+下表在对应证据出现之前保持 **未测**。不得把 `platforms: any`、windows-latest 或某次本机命令写成 Windows 11 / Ubuntu 桌面或 OMB 已验收。
+
 ## 矩阵
 
 | 项 | macOS（Apple 芯片） | Windows 11 | Ubuntu 24.04 |

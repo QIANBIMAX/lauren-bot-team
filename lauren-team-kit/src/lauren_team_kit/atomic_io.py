@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 import tempfile
 from contextlib import contextmanager
 from pathlib import Path
@@ -14,36 +15,100 @@ def _lock_path_for(target: Path) -> Path:
     return target.with_suffix(target.suffix + ".lock")
 
 
+def _ensure_lock_file(lock_file: Path) -> None:
+    """Create a non-empty lock file so a 1-byte range lock has somewhere to sit."""
+    lock_file.parent.mkdir(parents=True, exist_ok=True)
+    if lock_file.is_file() and lock_file.stat().st_size > 0:
+        return
+    with open(lock_file, "ab") as init:
+        init.seek(0, os.SEEK_END)
+        if init.tell() == 0:
+            init.write(b"\0")
+            init.flush()
+
+
+def _acquire_windows_lock(fh: Any, timeout_sec: float) -> None:
+    """Byte-range lock via stdlib ``msvcrt`` (Win32 ``LockFile``).
+
+    Same-process threads fail the second lock until the first unlocks, so
+    this also serializes in-process read-modify-write. It is not
+    ``PROCESS_TERMINATE`` and it is not a no-op. Full W3 (replace retries,
+    common-dir identity) is still later work.
+    """
+    import msvcrt
+    import time
+
+    fh.seek(0)
+    deadline = time.monotonic() + timeout_sec
+    while True:
+        try:
+            msvcrt.locking(fh.fileno(), msvcrt.LK_NBLCK, 1)
+            return
+        except OSError:
+            if time.monotonic() >= deadline:
+                raise TimeoutError(f"获取文件锁超时: {getattr(fh, 'name', '')}")
+            time.sleep(0.05)
+
+
+def _release_windows_lock(fh: Any) -> None:
+    import msvcrt
+
+    try:
+        fh.seek(0)
+        msvcrt.locking(fh.fileno(), msvcrt.LK_UNLCK, 1)
+    except OSError:
+        pass
+
+
+def _acquire_posix_lock(fh: Any, timeout_sec: float) -> None:
+    try:
+        import fcntl
+    except ImportError as exc:
+        raise OSError("当前平台没有 fcntl，无法加文件锁") from exc
+    import time
+
+    deadline = time.monotonic() + timeout_sec
+    while True:
+        try:
+            fcntl.flock(fh.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+            return
+        except BlockingIOError:
+            if time.monotonic() >= deadline:
+                raise TimeoutError(f"获取文件锁超时: {getattr(fh, 'name', '')}")
+            time.sleep(0.05)
+
+
+def _release_posix_lock(fh: Any) -> None:
+    try:
+        import fcntl
+
+        fcntl.flock(fh.fileno(), fcntl.LOCK_UN)
+    except Exception:
+        pass
+
+
 @contextmanager
 def file_lock(lock_file: Path, *, timeout_sec: float = 60.0) -> Iterator[None]:
-    """Exclusive advisory lock via fcntl (POSIX). Best-effort on other platforms."""
-    lock_file.parent.mkdir(parents=True, exist_ok=True)
-    fh = open(lock_file, "a+", encoding="utf-8")
+    """Exclusive lock for read-modify-write.
+
+    POSIX uses ``fcntl.flock``. Windows uses ``msvcrt.locking`` on the first
+    byte. Windows does not degrade to a no-op.
+    """
+    _ensure_lock_file(lock_file)
+    fh = open(lock_file, "r+b", buffering=0)
     try:
+        if sys.platform == "win32":
+            _acquire_windows_lock(fh, timeout_sec)
+        else:
+            _acquire_posix_lock(fh, timeout_sec)
         try:
-            import fcntl
-            import time
-
-            deadline = time.monotonic() + timeout_sec
-            while True:
-                try:
-                    fcntl.flock(fh.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
-                    break
-                except BlockingIOError:
-                    if time.monotonic() >= deadline:
-                        raise TimeoutError(f"获取文件锁超时: {lock_file}")
-                    time.sleep(0.05)
-        except ImportError:
-            # Windows / no fcntl: no-op coordination (single-process still atomic via replace)
-            pass
-        yield
+            yield
+        finally:
+            if sys.platform == "win32":
+                _release_windows_lock(fh)
+            else:
+                _release_posix_lock(fh)
     finally:
-        try:
-            import fcntl
-
-            fcntl.flock(fh.fileno(), fcntl.LOCK_UN)
-        except Exception:
-            pass
         fh.close()
 
 

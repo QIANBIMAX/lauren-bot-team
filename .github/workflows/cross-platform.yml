@@ -1,0 +1,49 @@
+# Native kit skeleton. windows-latest is not Windows 11 desktop / OMB acceptance.
+# Full Demo Bash scenarios stay Mac/Linux-only until W4; this workflow does not run them.
+name: cross-platform
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  kit:
+    name: kit (${{ matrix.os }}, py${{ matrix.python-version }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-24.04, macos-latest]
+        python-version: ["3.11", "3.12"]
+    env:
+      PYTHONUTF8: "1"
+      PIP_DISABLE_PIP_VERSION_CHECK: "1"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Clean install
+        working-directory: lauren-team-kit
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --no-cache-dir -e ".[dev]"
+
+      # Existing Bash rule probe reads gitignored demo-app/data/tasks.json.
+      # Seeding the committed fixture is not a Windows Demo port.
+      - name: Seed gitignored demo fixture
+        working-directory: demo-app
+        run: python -c "import sys; from pathlib import Path; sys.path.insert(0, 'src'); from demo_app.seed import seed; seed(Path('fixtures/basic.json'))"
+
+      - name: Kit pytest
+        working-directory: lauren-team-kit
+        run: python -m pytest tests -q --tb=short
+
+      - name: Demo Bash scope
+        shell: bash
+        run: |
+          echo "Full Demo Bash scenarios (lauren-team-kit/scripts/*.sh and demo-app bash smokes) remain Mac/Linux-only until W4."
+          echo "This job does not treat those scripts as Windows or Ubuntu desktop evidence, and windows-latest is not Windows 11 OMB acceptance."

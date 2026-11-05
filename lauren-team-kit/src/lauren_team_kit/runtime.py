@@ -1,15 +1,31 @@
 """Executor lease, cancel, and restart reconcile (Lite-C L5).
 
-Honest boundary: PID liveness is best-effort via ``os.kill(pid, 0)``.
-True OS-level process kill / GUI restart is NOT claimed verified here;
-cancel sets ``cancel_requested`` and releases the lease so callers stop,
-and records evidence. STATUS must not claim OS-kill E2E.
+PID liveness is platform-gated:
+
+* POSIX keeps ``os.kill(pid, 0)``. Signal 0 checks existence and is not delivered.
+* Windows never calls ``os.kill``. CPython maps every signal other than
+  ``CTRL_C_EVENT`` / ``CTRL_BREAK_EVENT`` to ``TerminateProcess``, and that
+  includes signal 0 (https://docs.python.org/3.12/library/os.html#os.kill).
+  Liveness uses ``OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION)`` via the
+  stdlib ``ctypes`` binding, then ``CloseHandle``. The access mask is query
+  only (``0x1000``), not ``PROCESS_TERMINATE``. No extra dependency.
+
+Cancel is not a finished cross-platform process-tree kill:
+
+* POSIX still sends best-effort ``SIGTERM`` and does not claim the process
+  was observed dead.
+* Windows only records protocol ``cancel_requested``. Job Object / controlled
+  process-tree cancel is a later W2 remainder and must not be described as done.
+  ``cancel_os_status`` is ``windows_incomplete``.
+
+STATUS must not claim OS-kill end-to-end verification.
 """
 
 from __future__ import annotations
 
 import os
 import signal
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -34,10 +50,45 @@ def _lease(task: dict[str, Any]) -> dict[str, Any]:
     return dict(raw) if isinstance(raw, dict) else {}
 
 
+# PROCESS_QUERY_LIMITED_INFORMATION. Not PROCESS_TERMINATE (0x0001).
+_WIN_PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
+# Right to wait on the process object. Not a terminate right.
+_WIN_SYNCHRONIZE = 0x00100000
+_WIN_ERROR_ACCESS_DENIED = 5
+_WIN_ERROR_INVALID_PARAMETER = 87
+_WIN_WAIT_OBJECT_0 = 0x00000000
+_WIN_WAIT_TIMEOUT = 0x00000102
+_WIN_STILL_ACTIVE = 259
+
+WINDOWS_CANCEL_INCOMPLETE = (
+    "Windows 取消未完成：未实现 Job Object / 受控进程树。"
+    "禁止 os.kill（CTRL_C_EVENT/CTRL_BREAK_EVENT 以外会 TerminateProcess，含 signal 0）。"
+    "此处只保留协议层 cancel_requested。"
+)
+
+
+def _is_windows() -> bool:
+    return sys.platform == "win32"
+
+
+def _valid_pid(pid: object) -> bool:
+    return isinstance(pid, int) and not isinstance(pid, bool) and pid > 0
+
+
 def pid_alive(pid: int) -> bool | None:
-    """True if process exists, False if gone, None if cannot check."""
-    if pid <= 0:
+    """True if the pid exists, False if it is gone, None if we cannot tell.
+
+    Windows dispatches to :func:`_pid_alive_windows` and does not call
+    ``os.kill``. POSIX keeps signal 0.
+    """
+    if not _valid_pid(pid):
         return None
+    if _is_windows():
+        return _pid_alive_windows(pid)
+    return _pid_alive_posix(pid)
+
+
+def _pid_alive_posix(pid: int) -> bool | None:
     try:
         os.kill(pid, 0)
         return True
@@ -48,6 +99,270 @@ def pid_alive(pid: int) -> bool | None:
         return True
     except OSError:
         return None
+
+
+def interpret_open_process_result(handle: int, last_error: int) -> bool | None:
+    """Map an ``OpenProcess`` result to liveness.
+
+    A non-zero handle means the process exists. The caller closes that handle.
+    ``ERROR_INVALID_PARAMETER`` (87) means the pid is not an existing process.
+    ``ERROR_ACCESS_DENIED`` (5) means it exists but this token cannot query it,
+    matching the POSIX ``PermissionError`` choice. Any other failure is unknown.
+    """
+    if handle:
+        return True
+    if last_error == _WIN_ERROR_INVALID_PARAMETER:
+        return False
+    if last_error == _WIN_ERROR_ACCESS_DENIED:
+        return True
+    return None
+
+
+def _load_kernel32():  # type: ignore[no-untyped-def]
+    """Load ``kernel32`` for query-only process checks. Windows only."""
+    import ctypes
+    from ctypes import wintypes
+
+    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    kernel32.OpenProcess.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
+    kernel32.OpenProcess.restype = ctypes.c_void_p
+    kernel32.CloseHandle.argtypes = [ctypes.c_void_p]
+    kernel32.CloseHandle.restype = wintypes.BOOL
+    kernel32.WaitForSingleObject.argtypes = [ctypes.c_void_p, wintypes.DWORD]
+    kernel32.WaitForSingleObject.restype = wintypes.DWORD
+    kernel32.GetExitCodeProcess.argtypes = [
+        ctypes.c_void_p,
+        ctypes.POINTER(wintypes.DWORD),
+    ]
+    kernel32.GetExitCodeProcess.restype = wintypes.BOOL
+    return kernel32
+
+
+def _read_last_error(kernel32: object) -> int:
+    """Win32 last-error after ``OpenProcess``.
+
+    Real ``kernel32`` is a ctypes ``WinDLL(..., use_last_error=True)``;
+    ``ctypes.get_last_error`` exists on Windows. Test doubles implement
+    ``last_error()`` so a Linux runner can simulate the codes. Lookup is on
+    the double's class so it does not call ``GetProcAddress`` and wipe the
+    real last-error.
+    """
+    method = getattr(type(kernel32), "last_error", None)
+    if callable(method):
+        return int(method(kernel32))
+    import ctypes
+
+    return int(ctypes.get_last_error())
+
+
+def _open_process(kernel32: Any, access: int, pid: int) -> tuple[int, int]:
+    handle = kernel32.OpenProcess(access, False, int(pid))
+    err = _read_last_error(kernel32)
+    return int(handle or 0), int(err)
+
+
+def _windows_wait_exited(kernel32: Any, handle: int) -> bool | None:
+    """True if the process has exited, False if it is still running.
+
+    ``WaitForSingleObject(handle, 0)`` only checks the synchronization object.
+    An exited process whose handle is still open (Python ``Popen`` keeps one
+    after ``wait()``) still opens successfully, and ``GetProcessTimes`` still
+    returns the original creation time. That must not count as the same live
+    executor. Timeout 0 does not terminate anything.
+    """
+    wait = getattr(kernel32, "WaitForSingleObject", None)
+    if not callable(wait):
+        return None
+    result = int(wait(handle, 0))
+    if result == _WIN_WAIT_TIMEOUT:
+        return False
+    if result == _WIN_WAIT_OBJECT_0:
+        return True
+    return None
+
+
+def _windows_exit_code(kernel32: Any, handle: int) -> int | None:
+    """Exit code, or None if it cannot be read.
+
+    ``STILL_ACTIVE`` (259) is the API sentinel for "still running", so a
+    process that really exited with 259 is ambiguous on this fallback.
+    """
+    import ctypes
+    from ctypes import wintypes
+
+    getter = getattr(kernel32, "GetExitCodeProcess", None)
+    if not callable(getter):
+        return None
+    code = wintypes.DWORD()
+    ok = getter(handle, ctypes.byref(code))
+    if not ok:
+        return None
+    return int(code.value)
+
+
+def _pid_alive_from_handle(kernel32: Any, handle: int) -> bool | None:
+    exited = _windows_wait_exited(kernel32, handle)
+    if exited is True:
+        return False
+    if exited is False:
+        return True
+    code = _windows_exit_code(kernel32, handle)
+    if code is None:
+        return None
+    return code == _WIN_STILL_ACTIVE
+
+
+def _pid_alive_windows(pid: int) -> bool | None:
+    """No-side-effect liveness via ``OpenProcess`` plus an exit check.
+
+    Does not call ``os.kill`` and does not request ``PROCESS_TERMINATE``.
+    A process that has already exited is False even when its kernel object
+    is still alive because some other handle is open. Creation-time mismatch
+    is applied by :func:`executor_still_same` when the pid is still running.
+    """
+    try:
+        kernel32 = _load_kernel32()
+    except OSError:
+        return None
+    query_sync = _WIN_PROCESS_QUERY_LIMITED_INFORMATION | _WIN_SYNCHRONIZE
+    handle, err = _open_process(kernel32, query_sync, pid)
+    if handle:
+        try:
+            return _pid_alive_from_handle(kernel32, handle)
+        finally:
+            kernel32.CloseHandle(handle)
+    if err == _WIN_ERROR_INVALID_PARAMETER:
+        return False
+    if err != _WIN_ERROR_ACCESS_DENIED:
+        return None
+    # SYNCHRONIZE was refused. Query-only still sees the exit code.
+    handle, err = _open_process(kernel32, _WIN_PROCESS_QUERY_LIMITED_INFORMATION, pid)
+    if not handle:
+        return interpret_open_process_result(0, err)
+    try:
+        code = _windows_exit_code(kernel32, handle)
+        if code is None:
+            return None
+        return code == _WIN_STILL_ACTIVE
+    finally:
+        kernel32.CloseHandle(handle)
+
+
+def _parse_proc_stat_starttime(text: str) -> str | None:
+    """Return ``proc:<starttime>`` from a ``/proc/<pid>/stat`` body.
+
+    ``comm`` may contain spaces and parentheses, so the clock-tick starttime
+    is field 22 counted after the last ``)``.
+    """
+    rparen = text.rfind(")")
+    if rparen < 0:
+        return None
+    fields = text[rparen + 1 :].split()
+    if len(fields) <= 19:
+        return None
+    token = fields[19]
+    if not token.isdigit():
+        return None
+    return f"proc:{token}"
+
+
+def _posix_create_time(pid: int) -> str | None:
+    path = Path(f"/proc/{int(pid)}/stat")
+    try:
+        text = path.read_text(encoding="utf-8")
+    except OSError:
+        return None
+    return _parse_proc_stat_starttime(text)
+
+
+def _windows_create_time(pid: int) -> str | None:
+    """Creation FILETIME via ``GetProcessTimes`` after a query-only open.
+
+    Returns None when the process is gone or the time cannot be read.
+    The token is ``winft:<100ns ticks>`` and is only a reuse discriminator.
+    """
+    import ctypes
+    from ctypes import wintypes
+
+    class FILETIME(ctypes.Structure):
+        _fields_ = [
+            ("dwLowDateTime", wintypes.DWORD),
+            ("dwHighDateTime", wintypes.DWORD),
+        ]
+
+    try:
+        kernel32 = _load_kernel32()
+    except OSError:
+        return None
+    kernel32.GetProcessTimes.argtypes = [
+        ctypes.c_void_p,
+        ctypes.POINTER(FILETIME),
+        ctypes.POINTER(FILETIME),
+        ctypes.POINTER(FILETIME),
+        ctypes.POINTER(FILETIME),
+    ]
+    kernel32.GetProcessTimes.restype = wintypes.BOOL
+    handle = kernel32.OpenProcess(
+        _WIN_PROCESS_QUERY_LIMITED_INFORMATION,
+        False,
+        int(pid),
+    )
+    if not handle:
+        return None
+    created = FILETIME()
+    exited = FILETIME()
+    kernel_t = FILETIME()
+    user_t = FILETIME()
+    try:
+        ok = kernel32.GetProcessTimes(
+            handle,
+            ctypes.byref(created),
+            ctypes.byref(exited),
+            ctypes.byref(kernel_t),
+            ctypes.byref(user_t),
+        )
+        if not ok:
+            return None
+        ticks = (int(created.dwHighDateTime) << 32) | int(created.dwLowDateTime)
+        return f"winft:{ticks}"
+    finally:
+        kernel32.CloseHandle(handle)
+
+
+def read_process_create_time(pid: int) -> str | None:
+    """Opaque creation token, or None if missing / unreadable.
+
+    POSIX uses ``/proc/<pid>/stat`` starttime when procfs exists (Linux).
+    Windows uses ``GetProcessTimes``. macOS has no procfs here, so the token
+    stays None until a later slice records another identity source.
+    """
+    if not _valid_pid(pid):
+        return None
+    if _is_windows():
+        return _windows_create_time(pid)
+    return _posix_create_time(pid)
+
+
+def executor_still_same(pid: int, expected_create_time: str | None) -> bool | None:
+    """Whether ``pid`` is still the same executor, accounting for PID reuse.
+
+    * False: process is gone, or both creation tokens are known and differ.
+    * True: process exists and no token was supplied (existence only), or the
+      token matches. A missing expected token does **not** prove identity.
+    * None: existence is unknown, or a token was required but could not be read.
+      Callers must not treat None as permission to kill.
+    """
+    alive = pid_alive(pid)
+    if alive is False:
+        return False
+    if alive is None:
+        return None
+    if not expected_create_time:
+        return True
+    current = read_process_create_time(pid)
+    if current is None:
+        return None
+    return current == expected_create_time
 
 
 def acquire_lease(
@@ -107,24 +422,53 @@ def release_lease(
     return task
 
 
+def _posix_sigterm(pid: int) -> dict[str, Any]:
+    try:
+        os.kill(pid, signal.SIGTERM)
+    except OSError as exc:
+        return {
+            "signal_sent": False,
+            "signal": "SIGTERM",
+            "signal_error": str(exc),
+            "cancel_os_status": "posix_error",
+        }
+    return {
+        "signal_sent": True,
+        "signal": "SIGTERM",
+        "cancel_os_status": "posix_signaled",
+    }
+
+
 def request_cancel_on_lease(
     task: dict[str, Any],
     *,
     signal_process: bool = True,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
-    """Flip cancel_requested; best-effort SIGTERM if pid known.
+    """Flip cancel_requested.
 
-    Does NOT claim the OS process was observed dead.
+    POSIX: best-effort SIGTERM when the pid looks alive. Does NOT claim the
+    process was observed dead.
+
+    Windows: never calls ``os.kill``. Marks ``windows_incomplete`` because
+    controlled process-tree cancel is not implemented.
     """
     task = dict(task)
     lease = _lease(task)
+    windows = _is_windows()
     report: dict[str, Any] = {
         "cancel_requested": True,
         "signal_sent": False,
         "pid": None,
         "pid_alive_before": None,
-        "boundary": "protocol_lease_plus_best_effort_signal",
+        "boundary": (
+            "protocol_lease_windows_cancel_incomplete"
+            if windows
+            else "protocol_lease_plus_best_effort_signal"
+        ),
+        "cancel_os_status": "windows_incomplete" if windows else "posix_not_sent",
     }
+    if windows:
+        report["cancel_note"] = WINDOWS_CANCEL_INCOMPLETE
     now = _now_iso()
     if not lease:
         lease = {
@@ -140,17 +484,13 @@ def request_cancel_on_lease(
         lease["status"] = "cancel_requested"
         lease["cancel_requested_at"] = now
         pid = lease.get("pid")
-        if isinstance(pid, int):
+        if _valid_pid(pid):
             report["pid"] = pid
             alive = pid_alive(pid)
             report["pid_alive_before"] = alive
-            if signal_process and alive is True:
-                try:
-                    os.kill(pid, signal.SIGTERM)
-                    report["signal_sent"] = True
-                    report["signal"] = "SIGTERM"
-                except OSError as e:
-                    report["signal_error"] = str(e)
+            # Windows must not fall through to SIGTERM / os.kill.
+            if (not windows) and signal_process and alive is True:
+                report.update(_posix_sigterm(int(pid)))
     task["executor_lease"] = lease
     task["updated_at"] = now
     return task, report
@@ -185,13 +525,17 @@ def cancel_task(
         raise RuntimeGateError(str(e)) from e
     updated = release_lease(updated, reason="cancelled")
     # Append cancel evidence blob on task for audit
+    note = "协议层取消+租约；未宣称 OS 级杀进程验收"
+    if lease_rep.get("cancel_os_status") == "windows_incomplete":
+        note = note + "；" + WINDOWS_CANCEL_INCOMPLETE
     cancel_ev = {
         "at": _now_iso(),
         "actor": actor,
         "reason": reason or "user_cancel",
         "lease": lease_rep,
         "os_kill_verified": False,
-        "note": "协议层取消+租约；未宣称 OS 级杀进程验收",
+        "cancel_os_status": lease_rep.get("cancel_os_status"),
+        "note": note,
     }
     updated = dict(updated)
     updated["cancel"] = cancel_ev
