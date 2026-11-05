@@ -1,4 +1,4 @@
-# lauren-bot-team v0.1
+# lauren-bot-team
 
 **新人从这里开始 → [docs/新手入门.md](docs/新手入门.md)**  
 （再细一点：[安装指南](docs/安装指南.md) · [使用指南](docs/使用指南.md)）
